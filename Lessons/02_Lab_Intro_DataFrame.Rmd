@@ -3,6 +3,8 @@ title: "Intro to Data Frames in R"
 author: "Luana Lima"
 date: "1/27/2021"
 output: pdf_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
