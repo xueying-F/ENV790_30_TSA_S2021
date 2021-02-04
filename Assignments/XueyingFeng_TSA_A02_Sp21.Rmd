@@ -46,10 +46,9 @@ Consider the data provided in the spreadsheet "Table_10.1_Renewable_Energy_Produ
 
 #install.packages("readxl")
 library("readxl")
-MonthlyData <- read_excel("./Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",sheet = 1, skip = 9) 
-MonthlyData
+MonthlyData <- read_excel("../Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",sheet = 1, skip = 9) 
 
-#AnnualData <- read_excel("./Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",2)
+#AnnualData <- read_excel("../Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",2)
 #AnnualData
 ```
 
@@ -59,7 +58,6 @@ You will work only with the following columns: Total Biomass Energy Production, 
 ```{r}
 #specific rows and columns just trim the table
 MonthlyData_subset<- MonthlyData[2:575, c(1, 4, 5, 6)]
-MonthlyData_subset
 
 #Checking data
 head(MonthlyData_subset)
@@ -80,7 +78,7 @@ colnames(MonthlyData_subset)=c("Month","Biomass","Renewable","Hydroelectric")
 
 # from Jan 1973 to Oct 2020 as a time series object
 MonthlyData_subset_ts <- ts(MonthlyData_subset[2:4], frequency = 12, start = c(1973, 1, 1), end = c(2020, 10, 1)) 
-MonthlyData_subset_ts
+#MonthlyData_subset_ts
 ```
 
 ## Question 3
@@ -108,57 +106,43 @@ Hydroelectric_sd
 ## Question 4
 Display and interpret the time series plot for each of these variables. Try to make your plot as informative as possible by writing titles, labels, etc. For each plot add a horizontal line at the mean of each series in a different color.
 ```{r}
-library(ggplot2)
-#plot.new()
-
-#using package ggplot2
-Biomass_plot <- ggplot(MonthlyData_subset, aes(x=Month, y=Biomass)) +
-  geom_line(aes(y=Biomass,col="Total Biomass Energy Production"),group = 1) +
-  geom_line(aes(y=Biomass_mean,col="Biomass mean"),group = 2) +
-  ggtitle("Total Biomass Energy Production Data") +
-  xlab("Time") + 
-  ylab("Total Biomass Energy Production (Trillion Btu)")
-Biomass_plot
-
-#dev.off()
-
+#library(ggplot2)
+plot(MonthlyData_subset_ts[,"Biomass"],col="blue",
+     ylab = "Total Biomass Energy Production(Trillion Btu)",
+     main = "Historical Data of Total Biomass Energy Production"
+     )
+#add a line with the mean
+abline(h=Biomass_mean,col="red")
 ```
+>This time series plot shows a drastic shift in 1975 and 2000 and shows a clear upward trend. Between 1990 and 2000, it shows random variation.
 
 ```{r}
-Renewable_plot <- ggplot(MonthlyData_subset, aes(x=Month, y=Renewable)) +
-  geom_line(aes(y=Renewable,col="Total Renewable Energy Production"),group = 1) +
-  geom_line(aes(y=Renewable_mean,col="Renewable mean"),group = 2) +
-  ggtitle("Total Renewable Energy Production Data") +
-  xlab("Time") + 
-  ylab("Total Renewable Energy Production (Trillion Btu)")
-Renewable_plot
+plot(MonthlyData_subset_ts[,"Renewable"],col="blue",
+     ylab = "Total Renewable Energy Production(Trillion Btu)",
+     main = "Historical Data of Total Renewable Energy Production"
+     )
+#add a line with the mean
+abline(h=Renewable_mean,col="red")
 ```
+>This plot shows increase in the data values seems to accelerate after 2000. Before the 2000, the cycles do not repeat at regular intervals and do not have the same shape.
 
 ```{r}
-Hydroelectric_plot <- ggplot(MonthlyData_subset, aes(x=Month, y=Hydroelectric)) +
-  geom_line(aes(y=Hydroelectric,col="Hydroelectric Power Consumption"),group = 1) +
-  geom_line(aes(y=Hydroelectric_mean,col="Hydroelectric mean"),group = 2) +
-  ggtitle("Hydroelectric Power Consumption Data") +
-  xlab("Time") + 
-  ylab("Hydroelectric Power Consumption (Trillion Btu)")
-Hydroelectric_plot
+plot(MonthlyData_subset_ts[,"Hydroelectric"],col="blue",
+     ylab = "Hydroelectric Power Consumption (Trillion Btu)",
+     main = "Hydroelectric Power Consumption Data"
+     )
+#add a line with the mean
+abline(h=Hydroelectric_mean,col="red")
 ```
+>These plot displays the pattern of Hydroelectric Power Consumption increasing and decreasing from 1980 to 2020, which seems changing seasonal.
 
 ## Question 5
 Compute the correlation between these three series. Are they significantly correlated? Explain your answer.
 ```{r}
-
 pairs(MonthlyData_subset[, c(2,3,4)])
-
-cor(MonthlyData_subset$Biomass, MonthlyData_subset$Renewable)
-
-cor(MonthlyData_subset$Biomass, MonthlyData_subset$Hydroelectric)
-
-cor(MonthlyData_subset$Renewable, MonthlyData_subset$Hydroelectric)
-
-#Due to the results of correlation and plots, Total Biomass Energy Production and Hydroelectric Power Consumption  are significatly correlated, whereas they other two are not.
+cor(MonthlyData_subset_ts)
 ```
-
+>Due to the results of correlation and plots, Total Biomass Energy Production and Total Renewable Energy Production are significatly correlated, whereas the other two are not.
 
 ## Question 6
 Compute the autocorrelation function from lag 1 up to lag 40 for these three variables. What can you say about these plots? Do the three of them have the same behavior?
@@ -169,12 +153,8 @@ Biomass_acf = acf(MonthlyData_subset_ts[,1], lag.max=40, type = "correlation", p
 Renewable_acf = acf(MonthlyData_subset_ts[,2], lag.max=40, type = "correlation", plot=TRUE, main="Renewable ACF")
 
 Hydroelectric_acf = acf(MonthlyData_subset_ts[,3], lag.max=40, type = "correlation", plot=TRUE, main="Hydroelectric ACF")
-
-
-
-
 ```
-
+> The Biomass and Renewable plots have very similar trend, but Hydroelectric one is kind of a periodic trend. They do not have same behavior.
 
 ## Question 7
 Compute the partial autocorrelation function from lag 1 to lag 40 for these three variables. How these plots differ from the ones in Q6?
@@ -183,9 +163,7 @@ Biomass_pacf = pacf(MonthlyData_subset_ts[,1], lag.max=40,plot=TRUE, main="Bioma
 
 Renewable_pacf = pacf(MonthlyData_subset_ts[,2], lag.max=40, plot=TRUE, main="Renewable PACF")
 
-Hydroelectric_acf = acf(MonthlyData_subset_ts[,3], lag.max=40, plot=TRUE, main="Hydroelectric PACF")
-
-
+Hydroelectric_pacf = pacf(MonthlyData_subset_ts[,3], lag.max=40, plot=TRUE, main="Hydroelectric PACF")
 
 ```
-
+> The three plots in Q7 is much more similar, but Hydroelectric plot is total different than Biomass and Renewable plots in Q6.
