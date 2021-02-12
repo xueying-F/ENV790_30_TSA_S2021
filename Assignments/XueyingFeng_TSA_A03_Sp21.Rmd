@@ -29,13 +29,45 @@ R packages needed for this assignment:"forecast","tseries", and "Kendall". Insta
 
 ```{r}
 #Load/install required package here
-
+library(lubridate)
+library(ggplot2)
+#install.packages("forecast")
+library(forecast)
+#install.packages("tseries")
+library(tseries)
+library(Kendall)
 ```
 
 ##Trend Component
 
 ### Q1
 Create a plot window that has one row and three columns. And then for each object on your data frame, fill the plot window with time series plot, ACF and PACF. You may use the some code form A2, but I want all three plots on the same window this time. (Hint: watch videos for M4)
+```{r}
+#Importing data set
+
+#install.packages("readxl")
+library("readxl")
+MonthlyData <- read_excel("../Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",sheet = 1, skip = 9) 
+
+MonthlyData_subset<- MonthlyData[2:575, c(1, 4, 5, 6)]
+
+#Checking data
+head(MonthlyData_subset)
+str(MonthlyData_subset)
+
+# change character format to numeric format
+MonthlyData_subset[,2:4] <- sapply(MonthlyData_subset[,2:4],as.numeric)
+str(MonthlyData_subset)
+
+#add column names 
+colnames(MonthlyData_subset)=c("Month","Biomass","Renewable","Hydroelectric")
+
+
+# from Jan 1973 to Oct 2020 as a time series object
+MonthlyData_subset_ts <- ts(MonthlyData_subset[2:4], frequency = 12, start = c(1973, 1, 1), end = c(2020, 10, 1)) 
+#MonthlyData_subset_ts
+```
+
 
 ### Q2
 From the plot in Q1, do the series Total Biomass Energy Production, Total Renewable Energy Production, Hydroelectric Power Consumption appear to have a trend? If yes, what kind of trend?
