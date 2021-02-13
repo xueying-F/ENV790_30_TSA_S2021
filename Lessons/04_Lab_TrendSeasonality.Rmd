@@ -3,6 +3,8 @@ title: "Lab 04: Trend and Seasonality"
 author: "Luana Lima"
 date: "02/10/2021"
 output: pdf_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ## Objectives
@@ -40,10 +42,11 @@ Let's continue working with our inflow data for reservoirs in Brazil.
 
 #Importing time series data from text file#
 raw_inflow_data <- read.table(file="../Data/inflowtimeseries.txt",header=FALSE,skip=0)
+str(raw_inflow_data)
 
 #Trim the table to include only columns you need
 nhydro <- ncol(raw_inflow_data)-2
-nobs <- nrow(raw_inflow_data) 
+nobs <- nrow(raw_inflow_data) #integer
 
 #If your file does not have header like this one you can add column names after 
 #creating the data frame
@@ -102,7 +105,7 @@ Note our last observation is from August 2011 but the data file was filled with 
 inflow_data <- inflow_data[1:(nobs-4),]
 
 #update object with number of observations
-nobs <- nobs-4
+nobs <- nobs-4 #numeric
 
 #Tail again to check if the rows were correctly removed
 tail(inflow_data)
@@ -143,11 +146,11 @@ Let's identify and remove trend component like we leaned on the recorded videos 
 
 ```{r}
 #Create vector t
-t <- c(1:nobs)
+t <- c(1:nobs) #int
 
 #Choose one hydro plant to study, as an exercise try to generalize this routine for all 15 HP
 #from the plot HP4 seems to have a trend so let's play with that column
-iHP=4  #change this to chekc other HP
+iHP=4  #change this to check other HP
 #prep_data <- data.frame("Inflow"=inflow_data[,iHP],"Time"=t)
 
 #Fit a linear trend to TS of iHP

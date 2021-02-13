@@ -4,6 +4,8 @@ subtitle: "Assignment 3 - Due date 02/12/21"
 author: "Xueying Feng"
 output: pdf_document
 geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: inline
 ---
   
 ## Directions
@@ -29,6 +31,9 @@ R packages needed for this assignment:"forecast","tseries", and "Kendall". Insta
 
 ```{r}
 #Load/install required package here
+
+#install.packages("readxl")
+library("readxl")
 library(lubridate)
 library(ggplot2)
 #install.packages("forecast")
@@ -42,44 +47,152 @@ library(Kendall)
 
 ### Q1
 Create a plot window that has one row and three columns. And then for each object on your data frame, fill the plot window with time series plot, ACF and PACF. You may use the some code form A2, but I want all three plots on the same window this time. (Hint: watch videos for M4)
-```{r}
+```{r Importing data set}
 #Importing data set
-
-#install.packages("readxl")
-library("readxl")
 MonthlyData <- read_excel("../Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",sheet = 1, skip = 9) 
 
-MonthlyData_subset<- MonthlyData[2:575, c(1, 4, 5, 6)]
+# number of obs
+nobsv <- nrow(MonthlyData) 
 
-#Checking data
+  
+# Select columns: Total Biomass Energy Production, Total Renewable Energy Production, Hydroelectric Power Consumption
+MonthlyData_subset<- MonthlyData[2:nobsv, c(1, 4, 5, 6)]
+
+# Checking data
 head(MonthlyData_subset)
 str(MonthlyData_subset)
+
+# Change tbl_df to data frame
+MonthlyData_subset = as.data.frame(MonthlyData_subset)
+str(MonthlyData_subset)
+ncoln<- ncol(MonthlyData_subset)-1
+```
+
+```{r Transforming data into time series object}
 
 # change character format to numeric format
 MonthlyData_subset[,2:4] <- sapply(MonthlyData_subset[,2:4],as.numeric)
 str(MonthlyData_subset)
 
-#add column names 
-colnames(MonthlyData_subset)=c("Month","Biomass","Renewable","Hydroelectric")
-
-
-# from Jan 1973 to Oct 2020 as a time series object
-MonthlyData_subset_ts <- ts(MonthlyData_subset[2:4], frequency = 12, start = c(1973, 1, 1), end = c(2020, 10, 1)) 
-#MonthlyData_subset_ts
+# Change column names 
+colnames(MonthlyData_subset)[1] <- "Date"
+#colnames(MonthlyData_subset)=c("Date","Biomass","Renewable","Hydroelectric")
+str(MonthlyData_subset)
 ```
 
+```{r plot}
+#using package ggplot2
+#devtools::install_github('cran/ggplot2')
+
+for(i in 1:ncoln){
+  print(ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+i)])) +
+            geom_line(color="blue") +
+            ylab(paste0(colnames(MonthlyData_subset)[(1+i)]," (Trillion Btu)",sep="")) 
+        )
+}
+```
+
+```{r Time series}
+# Create a data frame structure with these three time series
+# From Jan 1973 to Oct 2020 as a time series object
+MonthlyData_subset_ts <- ts(MonthlyData_subset[,2:4], frequency = 12, start = c(1973, 1, 1), end = c(2020, 10, 1)) 
+head(MonthlyData_subset_ts)
+tail(MonthlyData_subset_ts)
+```
+
+```{r plot: ACF and PACF}
+# number of obs
+#ncoln<- ncol(MonthlyData_subset)
+
+#Acf and Pacf
+par(mfrow=c(1,3))  #place plot side by side
+for(i in 1:ncoln){
+  # because I am not storing Acf() into any object, I don't need to specify plot=TRUE 
+  Acf(MonthlyData_subset_ts[,i],lag.max=40,main=paste("AFC of ",colnames(MonthlyData_subset)[(1+i)],sep="")) 
+}
+
+par(mfrow=c(1,3))  #place plot side by side
+for(i in 1:ncoln){
+  Pacf(MonthlyData_subset_ts[,i],lag.max=40,main=paste("PAFC of ",colnames(MonthlyData_subset)[(1+i)],sep=""))
+}
+
+```
 
 ### Q2
 From the plot in Q1, do the series Total Biomass Energy Production, Total Renewable Energy Production, Hydroelectric Power Consumption appear to have a trend? If yes, what kind of trend?
+```{r}
+# The Biomass and Renewable plots have very similar trend, but Hydroelectric one is kind of a periodic trend. They do not have same behavior.
+
+# The three PACF plots are much more similar.
+```
 
 ### Q3
 Use the *lm()* function to fit a linear trend to the three time series. Ask R to print the summary of the regression. Interpret the regression output, i.e., slope and intercept. Save the regression coefficients for further analysis.
+```{r lm()}
+#Create vector t
+nobsv <-  nrow(MonthlyData_subset) #int
+nobsv <- nobsv-1+1 #numeric
+
+#Create vector t
+n <- c(1:nobsv)
+
+par(mfrow=c(1,3))
+for(EnergyType in 1:ncoln){
+  #Fit a linear trend to TS of EnergyType
+  LinearTrend_model <- lm(MonthlyData_subset[,EnergyType+1]~n)  
+  summary(LinearTrend_model)
+  
+  beta0=as.numeric(LinearTrend_model$coefficients[1])  #first coefficient is the intercept term or beta0
+  beta1=as.numeric(LinearTrend_model$coefficients[2])  #second coefficient is the slope or beta1
+  
+  #Let's plot the time series with its trend line
+  print(ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
+              geom_line(color="blue") +
+              ylab(paste0(colnames(MonthlyData_subset)[(1+EnergyType)]," (Trillion Btu)",sep="")) +
+              #geom_abline(intercept = beta0, slope = beta1, color="red")
+              geom_smooth(color="red",method="lm") )
+}
+
+```
+
  
 ### Q4
-Use the regression coefficients from Q3 to detrend the series. Plot the detrended series and  compare with the plots from Q1. What happened? Did anything change?
+Use the regression coefficients from Q3 to detrend the series. Plot the detrended series and compare with the plots from Q1. What happened? Did anything change?
+```{r Plot the detrended series}
+#remove the trend from series
+par(mfrow=c(1,3))
+for(EnergyType in 1:ncoln){
+  DetrendInflow_data <- MonthlyData_subset[,(EnergyType+1)]-(beta0+beta1*n)
+
+  print(ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
+              geom_line(color="blue") +
+              ylab(paste0(colnames(MonthlyData_subset)[(1+EnergyType)]," (Trillion Btu)",sep="")) +
+              #geom_abline(intercept = beta0, slope = beta1, color="red")
+              geom_smooth(color="red",method="lm") +
+              geom_line(aes(y=DetrendInflow_data), col="green")+
+              geom_smooth(aes(y=DetrendInflow_data),color="orange",method="lm"))
+}
+```
+
 
 ### Q5
 Plot ACF and PACF for the detrended series and compare with the plots from Q1. Did the plots change? How?
+```{r ACF and PACF for the detrended series}
+
+for(EnergyType in 1:ncoln){
+  Detrend_data <- MonthlyData_subset[,(EnergyType+1)]-(beta0+beta1*n)
+  str(Detrend_data)
+  
+  #change Detrend_data to TS
+  Detrend_data_ts <- ts(Detrend_data, frequency = 12) 
+  
+  #plot ACF and PACF for Detrend_data_ts
+  par(mfrow=c(1,2)) 
+  Acf(Detrend_data_ts,lag.max=40,main=paste("AFC of ",colnames(MonthlyData_subset)[(1+i)],sep="")) 
+  Pacf(Detrend_data_ts,lag.max=40,main=paste("PAFC of ",colnames(MonthlyData_subset)[(1+i)],sep=""))
+}
+  
+```
 
 ## Seasonal Component
 
@@ -87,11 +200,101 @@ Set aside the detrended series and consider the original series again from Q1 to
 
 ### Q6
 Do the series seem to have a seasonal trend? Which serie/series? Use function *lm()* to fit a seasonal means model to this/these time series. Ask R to print the summary of the regression. Interpret the regression output. Save the regression coefficients for further analysis.
+```{r Biomass}
+#Let's choose another HP
+EnergyType=1
 
+#Use seasonal means model
+#First create the seasonal dummies
+Energy_dummies <- seasonaldummy(MonthlyData_subset_ts[,EnergyType])  
+#this function only accepts ts object, no need to add one here because date 
+#object is not a column
+
+#Then fit a linear model to the seasonal dummies
+seasonal_model=lm(MonthlyData_subset[,(EnergyType+1)]~Energy_dummies)
+summary(seasonal_model)
+
+#Look at the regression coefficient. These will be the values of Beta
+
+#Store regression coefficients
+beta_int=seasonal_model$coefficients[1]
+beta_coeff=seasonal_model$coefficients[2:12]
+
+#compute seasonal component
+seasonal_comp=array(0,nobsv)
+for(n in 1:nobsv){
+  seasonal_comp[n]=(beta_int+beta_coeff%*%Energy_dummies[n,])
+}
+
+#Understanding what we did
+ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
+            geom_line(color="blue") +
+            ylab(paste0(colnames(MonthlyData_subset)[(1+EnergyType)]," (Trillion Btu)",sep="")) +
+            geom_line(aes(y=seasonal_comp), col="red")
+
+```
+```{r Reneable energy}
+#Let's choose another HP
+EnergyType=2
+
+#Use seasonal means model
+#First create the seasonal dummies
+Energy_dummies <- seasonaldummy(MonthlyData_subset_ts[,EnergyType])  
+#this function only accepts ts object, no need to add one here because date 
+#object is not a column
+
+#Then fit a linear model to the seasonal dummies
+seasonal_model=lm(MonthlyData_subset[,(EnergyType+1)]~Energy_dummies)
+summary(seasonal_model)
+
+#Look at the regression coefficient. These will be the values of Beta
+
+#Store regression coefficients
+beta_int=seasonal_model$coefficients[1]
+beta_coeff=seasonal_model$coefficients[2:12]
+
+#compute seasonal component
+seasonal_comp=array(0,nobsv)
+for(n in 1:nobsv){
+  seasonal_comp[n]=(beta_int+beta_coeff%*%Energy_dummies[n,])
+}
+
+#Understanding what we did
+ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
+            geom_line(color="blue") +
+            ylab(paste0(colnames(MonthlyData_subset)[(1+EnergyType)]," (Trillion Btu)",sep="")) +
+            geom_line(aes(y=seasonal_comp), col="red")
+
+```
 ### Q7
 Use the regression coefficients from Q6 to deseason the series. Plot the deseason series and compare with the plots from part Q1. Did anything change?
+```{r}
+#Removing seasonal component
+Deseason_data <- MonthlyData_subset[,(1+EnergyType)]-seasonal_comp
+
+#Understanding what we did
+ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
+            geom_line(color="blue") +
+            ylab(paste0(colnames(MonthlyData_subset)[(1+EnergyType)]," (Trillion Btu)",sep="")) +
+            geom_line(aes(y=Deseason_data), col="green")
+```
 
 ### Q8
 Plot ACF and PACF for the deseason series and compare with the plots from Q1. Did the plots change? How?
+```{r ACF and PACF for the deseason series}
 
+for(EnergyType in 1:ncoln){
+  Deseason_data <- MonthlyData_subset[,(1+EnergyType)]-seasonal_comp
+  str(Deseason_data)
+  
+  #change Deseason_data to TS
+  Deseason_data_ts <- ts(Deseason_data, frequency = 12) 
+  
+  #plot ACF and PACF for Detrend_data_ts
+  par(mfrow=c(1,2)) 
+  Acf(Deseason_data_ts,lag.max=40,main=paste("AFC of ",colnames(MonthlyData_subset)[(1+i)],sep="")) 
+  Pacf(Deseason_data_ts,lag.max=40,main=paste("PAFC of ",colnames(MonthlyData_subset)[(1+i)],sep=""))
+}
+  
+```
 
