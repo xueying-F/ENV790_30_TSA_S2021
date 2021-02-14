@@ -96,6 +96,7 @@ for(i in 1:ncoln){
 # Create a data frame structure with these three time series
 # From Jan 1973 to Oct 2020 as a time series object
 MonthlyData_subset_ts <- ts(MonthlyData_subset[,2:4], frequency = 12, start = c(1973, 1, 1), end = c(2020, 10, 1)) 
+str(MonthlyData_subset_ts)
 head(MonthlyData_subset_ts)
 tail(MonthlyData_subset_ts)
 ```
@@ -129,11 +130,10 @@ From the plot in Q1, do the series Total Biomass Energy Production, Total Renewa
 ### Q3
 Use the *lm()* function to fit a linear trend to the three time series. Ask R to print the summary of the regression. Interpret the regression output, i.e., slope and intercept. Save the regression coefficients for further analysis.
 ```{r lm()}
-#Create vector t
 nobsv <-  nrow(MonthlyData_subset) #int
 nobsv <- nobsv-1+1 #numeric
 
-#Create vector t
+#Create vector n
 n <- c(1:nobsv)
 
 par(mfrow=c(1,3))
@@ -161,7 +161,16 @@ Use the regression coefficients from Q3 to detrend the series. Plot the detrende
 ```{r Plot the detrended series}
 #remove the trend from series
 par(mfrow=c(1,3))
+
 for(EnergyType in 1:ncoln){
+  #Fit a linear trend to TS of EnergyType
+  LinearTrend_model <- lm(MonthlyData_subset[,EnergyType+1]~n)  
+  summary(LinearTrend_model)
+  
+  beta0=as.numeric(LinearTrend_model$coefficients[1])  #first coefficient is the intercept term or beta0
+  beta1=as.numeric(LinearTrend_model$coefficients[2])  #second coefficient is the slope or beta1
+  
+  #Remove the trend
   DetrendInflow_data <- MonthlyData_subset[,(EnergyType+1)]-(beta0+beta1*n)
 
   print(ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
@@ -177,21 +186,35 @@ for(EnergyType in 1:ncoln){
 
 ### Q5
 Plot ACF and PACF for the detrended series and compare with the plots from Q1. Did the plots change? How?
-```{r ACF and PACF for the detrended series}
+```{r Detrend data frame}
+Data_Detrend <- MonthlyData_subset
 
-for(EnergyType in 1:ncoln){
-  Detrend_data <- MonthlyData_subset[,(EnergyType+1)]-(beta0+beta1*n)
-  str(Detrend_data)
-  
-  #change Detrend_data to TS
-  Detrend_data_ts <- ts(Detrend_data, frequency = 12) 
-  
-  #plot ACF and PACF for Detrend_data_ts
-  par(mfrow=c(1,2)) 
-  Acf(Detrend_data_ts,lag.max=40,main=paste("AFC of ",colnames(MonthlyData_subset)[(1+i)],sep="")) 
-  Pacf(Detrend_data_ts,lag.max=40,main=paste("PAFC of ",colnames(MonthlyData_subset)[(1+i)],sep=""))
+# Add detrend data column in data frame
+for(i in 1:ncoln) {
+  # Create new column
+  detrend <- rep(i, nrow(Data_Detrend))
+  # Append new column
+  Data_Detrend[ , ncol(Data_Detrend) + 1] <- MonthlyData_subset[,(i+1)]-(beta0+beta1*n)
+  # Rename column name
+  colnames(Data_Detrend)[ncol(Data_Detrend)] <- paste0(colnames(Data_Detrend)[(1+i)]," Detrend",sep="")  
 }
-  
+
+# Check data
+str(Data_Detrend)
+head(Data_Detrend)
+```
+```{r Detrend Acf and Pacf plots}
+#change Detrend_data to TS
+Data_Detrend_ts <- ts(Data_Detrend[,2:7],frequency=12) 
+str(Data_Detrend_ts)
+
+#Acf and Pacf plots
+for(i in 1:ncoln){
+  par(mfrow=c(1,2))  #place plot side by side
+  Acf(Data_Detrend_ts[,i+3],lag.max=40,main=paste("AFC of ",colnames(Data_Detrend_ts)[(3+i)],sep="")) 
+  # because I am not storing Acf() into any object, I don't need to specify plot=TRUE 
+  Pacf(Data_Detrend_ts[,i+3],lag.max=40,main=paste("PAFC of ",colnames(Data_Detrend_ts)[(3+i)],sep=""))
+}
 ```
 
 ## Seasonal Component
@@ -200,83 +223,55 @@ Set aside the detrended series and consider the original series again from Q1 to
 
 ### Q6
 Do the series seem to have a seasonal trend? Which serie/series? Use function *lm()* to fit a seasonal means model to this/these time series. Ask R to print the summary of the regression. Interpret the regression output. Save the regression coefficients for further analysis.
-```{r Biomass}
-#Let's choose another HP
-EnergyType=1
+```{r Seasonal trend}
 
-#Use seasonal means model
-#First create the seasonal dummies
-Energy_dummies <- seasonaldummy(MonthlyData_subset_ts[,EnergyType])  
-#this function only accepts ts object, no need to add one here because date 
-#object is not a column
-
-#Then fit a linear model to the seasonal dummies
-seasonal_model=lm(MonthlyData_subset[,(EnergyType+1)]~Energy_dummies)
-summary(seasonal_model)
-
-#Look at the regression coefficient. These will be the values of Beta
-
-#Store regression coefficients
-beta_int=seasonal_model$coefficients[1]
-beta_coeff=seasonal_model$coefficients[2:12]
-
-#compute seasonal component
-seasonal_comp=array(0,nobsv)
-for(n in 1:nobsv){
-  seasonal_comp[n]=(beta_int+beta_coeff%*%Energy_dummies[n,])
+for(EnergyType in 1:ncoln){
+  #Use seasonal means model
+  #First create the seasonal dummies
+  Energy_dummies <- seasonaldummy(MonthlyData_subset_ts[,EnergyType])  
+  #this function only accepts ts object, no need to add one here because date 
+  #object is not a column
+  
+  #Then fit a linear model to the seasonal dummies
+  seasonal_model=lm(MonthlyData_subset[,(EnergyType+1)]~Energy_dummies)
+  summary(seasonal_model)
+  
+  #Look at the regression coefficient. These will be the values of Beta
+  
+  #Store regression coefficients
+  beta_int=seasonal_model$coefficients[1]
+  beta_coeff=seasonal_model$coefficients[2:12]
+  
+  #compute seasonal component
+  seasonal_comp=array(0,nobsv)
+  for(n in 1:nobsv){
+    seasonal_comp[n]=(beta_int+beta_coeff%*%Energy_dummies[n,])
+  }
+  
+  #Understanding what we did
+  print(ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
+              geom_line(color="blue") +
+              ylab(paste0(colnames(MonthlyData_subset)[(1+EnergyType)]," (Trillion Btu)",sep="")) +
+              geom_line(aes(y=seasonal_comp), col="red"))
 }
-
-#Understanding what we did
-ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
-            geom_line(color="blue") +
-            ylab(paste0(colnames(MonthlyData_subset)[(1+EnergyType)]," (Trillion Btu)",sep="")) +
-            geom_line(aes(y=seasonal_comp), col="red")
-
 ```
-```{r Reneable energy}
-#Let's choose another HP
-EnergyType=2
 
-#Use seasonal means model
-#First create the seasonal dummies
-Energy_dummies <- seasonaldummy(MonthlyData_subset_ts[,EnergyType])  
-#this function only accepts ts object, no need to add one here because date 
-#object is not a column
 
-#Then fit a linear model to the seasonal dummies
-seasonal_model=lm(MonthlyData_subset[,(EnergyType+1)]~Energy_dummies)
-summary(seasonal_model)
 
-#Look at the regression coefficient. These will be the values of Beta
-
-#Store regression coefficients
-beta_int=seasonal_model$coefficients[1]
-beta_coeff=seasonal_model$coefficients[2:12]
-
-#compute seasonal component
-seasonal_comp=array(0,nobsv)
-for(n in 1:nobsv){
-  seasonal_comp[n]=(beta_int+beta_coeff%*%Energy_dummies[n,])
-}
-
-#Understanding what we did
-ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
-            geom_line(color="blue") +
-            ylab(paste0(colnames(MonthlyData_subset)[(1+EnergyType)]," (Trillion Btu)",sep="")) +
-            geom_line(aes(y=seasonal_comp), col="red")
-
-```
 ### Q7
 Use the regression coefficients from Q6 to deseason the series. Plot the deseason series and compare with the plots from part Q1. Did anything change?
 ```{r}
-#Removing seasonal component
-Deseason_data <- MonthlyData_subset[,(1+EnergyType)]-seasonal_comp
-
-#Understanding what we did
-ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
-            geom_line(color="blue") +
-            ylab(paste0(colnames(MonthlyData_subset)[(1+EnergyType)]," (Trillion Btu)",sep="")) +
-            geom_line(aes(y=Deseason_data), col="green")
+for(EnergyType in 1:ncoln){
+  
+  #Removing seasonal component
+  Deseason_data <- MonthlyData_subset[,(1+EnergyType)]-seasonal_comp
+  
+  #Understanding what we did
+  print(ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
+              geom_line(color="blue") +
+              ylab(paste0(colnames(MonthlyData_subset)[(1+EnergyType)]," (Trillion Btu)",sep="")) +
+              geom_line(aes(y=Deseason_data), col="green"))
+}
 ```
 
 ### Q8
