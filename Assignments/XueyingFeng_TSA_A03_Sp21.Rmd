@@ -84,7 +84,9 @@ str(MonthlyData_subset)
 #using package ggplot2
 #devtools::install_github('cran/ggplot2')
 
+
 for(i in 1:ncoln){
+  par(mfrow=c(1,3))
   print(ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+i)])) +
             geom_line(color="blue") +
             ylab(paste0(colnames(MonthlyData_subset)[(1+i)]," (Trillion Btu)",sep="")) 
@@ -121,11 +123,11 @@ for(i in 1:ncoln){
 
 ### Q2
 From the plot in Q1, do the series Total Biomass Energy Production, Total Renewable Energy Production, Hydroelectric Power Consumption appear to have a trend? If yes, what kind of trend?
-```{r}
-# The Biomass and Renewable plots have very similar trend, but Hydroelectric one is kind of a periodic trend. They do not have same behavior.
 
-# The three PACF plots are much more similar.
-```
+>The series Total Biomass Energy Production, Total Renewable Energy Production, Hydroelectric Power Consumption appear to have a trend. 
+>For first two plot, ACF with significant correlations on whole lags, which means they are highly correlated with each other. Also, the slow decrease in the ACF as the lags increase is due to the trend, while the “scalloped” shape is due the seasonality.
+>However,for third plot,there are non-significant autocorrelation for some lags, but in general, the ACF shows an oscillation, which indicates seasonal series, but no trend. The peaks occur at lags of 12, 24, 36 months.
+
 
 ### Q3
 Use the *lm()* function to fit a linear trend to the three time series. Ask R to print the summary of the regression. Interpret the regression output, i.e., slope and intercept. Save the regression coefficients for further analysis.
@@ -140,10 +142,12 @@ par(mfrow=c(1,3))
 for(EnergyType in 1:ncoln){
   #Fit a linear trend to TS of EnergyType
   LinearTrend_model <- lm(MonthlyData_subset[,EnergyType+1]~n)  
-  summary(LinearTrend_model)
+  print(summary(LinearTrend_model))
   
   beta0=as.numeric(LinearTrend_model$coefficients[1])  #first coefficient is the intercept term or beta0
   beta1=as.numeric(LinearTrend_model$coefficients[2])  #second coefficient is the slope or beta1
+  print(beta0)
+  print(beta1)
   
   #Let's plot the time series with its trend line
   print(ggplot(MonthlyData_subset, aes(x=Date, y=MonthlyData_subset[,(1+EnergyType)])) +
@@ -154,7 +158,12 @@ for(EnergyType in 1:ncoln){
 }
 
 ```
-
+>Formula Call:the output is the formula R used to fit the data. The formula just needs the predictor (vector n) and the target/response variable (production), together with the data being used (MonthlyData_subset).
+>The Residuals section of the model output breaks it down into 5 summary points. When assessing how well the model fit the data, you should look for a symmetrical distribution across these points on the mean value zero (0).
+>In simple linear regression, the coefficients are two unknown constants that represent the intercept and slope terms in the linear model. 
+>The coefficient Standard Error measures the average amount that the coefficient estimates vary from the actual average value of our response variable.
+>A small p-value for the intercept and the slope indicates that we can reject the null hypothesis which allows us to conclude that there is a relationship between predictor and response variable.
+>The R-squared statistic provides a measure of how well the model is fitting the actual data. 
  
 ### Q4
 Use the regression coefficients from Q3 to detrend the series. Plot the detrended series and compare with the plots from Q1. What happened? Did anything change?
@@ -182,7 +191,7 @@ for(EnergyType in 1:ncoln){
               geom_smooth(aes(y=DetrendInflow_data),color="orange",method="lm"))
 }
 ```
-
+>Detrend plot makes a time series stationary, which does not have trend and are not dependent on time.
 
 ### Q5
 Plot ACF and PACF for the detrended series and compare with the plots from Q1. Did the plots change? How?
@@ -203,6 +212,7 @@ for(i in 1:ncoln) {
 str(Data_Detrend)
 head(Data_Detrend)
 ```
+
 ```{r Detrend Acf and Pacf plots}
 #change Detrend_data to TS
 Data_Detrend_ts <- ts(Data_Detrend[,2:7],frequency=12) 
@@ -216,6 +226,7 @@ for(i in 1:ncoln){
   Pacf(Data_Detrend_ts[,i+3],lag.max=40,main=paste("PAFC of ",colnames(Data_Detrend_ts)[(3+i)],sep=""))
 }
 ```
+>The plot change a little bit, but not too much.
 
 ## Seasonal Component
 
@@ -234,7 +245,7 @@ for(EnergyType in 1:ncoln){
   
   #Then fit a linear model to the seasonal dummies
   seasonal_model=lm(MonthlyData_subset[,(EnergyType+1)]~Energy_dummies)
-  summary(seasonal_model)
+  print(summary(seasonal_model))
   
   #Look at the regression coefficient. These will be the values of Beta
   
@@ -255,7 +266,7 @@ for(EnergyType in 1:ncoln){
               geom_line(aes(y=seasonal_comp), col="red"))
 }
 ```
-
+>There series all seem to have a seasonal trend.
 
 
 ### Q7
@@ -273,6 +284,10 @@ for(EnergyType in 1:ncoln){
               geom_line(aes(y=Deseason_data), col="green"))
 }
 ```
+>First plot has more obvious oscillations
+>The first two plots imply that the role of the independent variables isn’t affected by seasonal patterns, but for the other two, the overall movement of the time series with seasonal effect smoothed out. 
+
+
 
 ### Q8
 Plot ACF and PACF for the deseason series and compare with the plots from Q1. Did the plots change? How?
@@ -292,4 +307,5 @@ for(EnergyType in 1:ncoln){
 }
   
 ```
-
+>The spike value of ACF in plot 1 and 2 are different from that of plots from Q1.
+> For Thrid plot, the slow decrease in the ACF as the lags increase is due to the trend, while the “scalloped” shape is due the seasonality, which is total different trend from Q1.
