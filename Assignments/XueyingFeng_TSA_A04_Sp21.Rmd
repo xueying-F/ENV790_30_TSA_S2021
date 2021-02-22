@@ -1,0 +1,217 @@
+---
+title: "ENV 790.30 - Time Series Analysis for Energy Data | Spring 2021"
+subtitle: "Assignment 4 - Due date 02/25/21"
+author: "Xueying Feng"
+output: pdf_document
+geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: inline
+---
+  
+## Directions
+  
+  You should open the .rmd file corresponding to this assignment on RStudio. The file is available on our class repository on Github. And to do so you will need to fork our repository and link it to your RStudio.  
+
+Once you have the project open the first thing you will do is change "Student Name" on line 3 with your name. 
+Then you will start working through the assignment by  **creating code and output** that answer each question. Be sure to use this assignment document. Your report should contain the answer to each question and any plots/tables you obtained (when applicable).
+
+When you have completed the assignment, **Knit** the text and code into a single PDF file. Rename the pdf file such that it includes your first and last name (e.g., "LuanaLima_TSA_A04_Sp21.Rmd"). Submit this pdf using Sakai. 
+
+## Questions 
+
+Consider the same data you used for A2 from the spreadsheet "Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx". The data comes from the US Energy Information and Administration and corresponds to the January 2021 Monthly Energy Review.
+
+R packages needed for this assignment:"forecast","tseries", and "Kendall". Install these packages, if you haven't done yet. Do not forget to load them before running your script, since they are NOT default packages.\\
+
+```{r}
+#Load/install required package here
+#install.packages("readxl")
+library("readxl")
+library(lubridate)
+library(ggplot2)
+#install.packages("forecast")
+library(forecast)
+#install.packages("tseries")
+library(tseries)
+library(Kendall)
+
+#install.packages("outliers")
+library(outliers)
+#install.packages("tidyverse")
+library(tidyverse)
+
+
+```
+
+
+## Stochastic Trend and Stationarity Test
+
+For this part you will once again work only with the following columns: Total Biomass Energy Production, Total Renewable Energy Production, Hydroelectric Power Consumption. Create a data frame structure with these three time series and the Date column. Don't forget to format the date object.
+
+```{r}
+#Importing data set
+
+MonthlyData <- read_excel("../Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",sheet = 1, skip = 9) 
+
+# number of obs
+nobsv <- nrow(MonthlyData) 
+
+  
+# Select columns: Total Biomass Energy Production, Total Renewable Energy Production, Hydroelectric Power Consumption
+MonthlyData_subset<- MonthlyData[2:nobsv, c(1, 4, 5, 6)]
+
+# Checking data
+head(MonthlyData_subset)
+str(MonthlyData_subset)
+
+# Change tbl_df to data frame
+MonthlyData_subset = as.data.frame(MonthlyData_subset)
+str(MonthlyData_subset)
+
+# number of col
+ncoln<- ncol(MonthlyData_subset)-1
+
+# Change column names 
+colnames(MonthlyData_subset)[1] <- "Date"
+colnames(MonthlyData_subset)=c("Date","Biomass","Renewable","Hydroelectric")
+str(MonthlyData_subset)
+
+# change character format to numeric format
+MonthlyData_subset[,2:4] <- sapply(MonthlyData_subset[,2:4],as.numeric)
+str(MonthlyData_subset)
+
+# Create a data frame structure with these three time series
+# From Jan 1973 to Oct 2020 as a time series object
+MonthlyData_subset_ts <- ts(MonthlyData_subset[,2:4], frequency = 12, start = c(1973, 1, 1), end = c(2020, 10, 1)) 
+str(MonthlyData_subset_ts)
+```
+```{r}
+MonthlyData_subset_ts <- as.ts(MonthlyData_subset_ts[1:574,])
+MyDate <- as.Date(MonthlyData_subset$Date)
+head(MyDate)
+
+#create new df
+MonthlyData_new <- cbind.data.frame(MyDate, MonthlyData_subset_ts)
+str(MonthlyData_new)
+class(MonthlyData_new)
+head(MonthlyData_new)
+```
+
+### Q1
+Now let's try to difference these three series using function diff(). Start with the original data from part (b). Try differencing first at lag 1 and plot the remaining series. Did anything change? Do the series still seem to have trend?
+```{r}
+MonthlyData_subset_ts_diff <- diff(MonthlyData_subset_ts, lag = 1, differences = 1)
+
+# Change MonthlyData_subset_ts_diff to data frame
+df_diff<- as.data.frame(MonthlyData_subset_ts_diff)
+
+#Add the new series(frame?) to our data frame
+df_MonthlyData_full <- 
+  MonthlyData_subset %>% 
+  cbind(BioDiff = c(NA,as.numeric(df_diff$Biomass))) %>% 
+  cbind(RenewDiff = c(NA,as.numeric(df_diff$Renewable))) %>% 
+  cbind(HydroDiff = c(NA,as.numeric(df_diff$Hydroelectric))) %>% 
+  na.omit(df_MonthlyData_full)
+
+head(df_MonthlyData_full)
+
+
+#Comparing ACFs & PACFs
+#Biomass
+par(mar=c(3,3,3,0));par(mfrow=c(2,2))
+Acf(df_MonthlyData_full$Biomass,lag.max=40,main="Biomass ACF",ylim=c(-.2,1))
+Acf(df_MonthlyData_full$BioDiff,lag.max=40,main="Diff Biomass ACF",ylim=c(-.2,1))
+Pacf(df_MonthlyData_full$Biomass,lag.max=40,main="Biomass PACF",ylim=c(-.2,1))
+Pacf(df_MonthlyData_full$BioDiff,lag.max=40,main="Diff Biomass PACF",ylim=c(-.2,1))
+
+# RenewDiff
+par(mar=c(3,3,3,0));par(mfrow=c(2,2))
+Acf(df_MonthlyData_full$Renewable,lag.max=40,main="Renewable ACF",ylim=c(-.2,1))
+Acf(df_MonthlyData_full$RenewDiff,lag.max=40,main="Diff Renewable ACF",ylim=c(-.2,1))
+Pacf(df_MonthlyData_full$Renewable,lag.max=40,main="Renewable PACF",ylim=c(-.2,1))
+Pacf(df_MonthlyData_full$RenewDiff,lag.max=40,main="Diff Renewable PACF",ylim=c(-.2,1))
+
+# RenewDiff
+par(mar=c(3,3,3,0));par(mfrow=c(2,2))
+Acf(df_MonthlyData_full$Hydroelectric,lag.max=40,main="Hydroelectric ACF",ylim=c(-.2,1))
+Acf(df_MonthlyData_full$HydroDiff,lag.max=40,main="Diff Hydroelectric ACF",ylim=c(-.2,1))
+Pacf(df_MonthlyData_full$Hydroelectric,lag.max=40,main="Hydroelectric PACF",ylim=c(-.2,1))
+Pacf(df_MonthlyData_full$HydroDiff,lag.max=40,main="Diff Hydroelectric PACF",ylim=c(-.2,1))
+
+
+```
+
+### Q2
+Compute Mann-Kendall and Spearman's Correlation Rank Test for each time series. Ask R to print the results. Interpret the results. 
+```{r}
+#Since I have seasonal data I cannot use the simple MannKendall()
+#another example of functions that need a ts object
+ts_MonthlyData_full <- ts(df_MonthlyData_full[,2:7], 
+                          frequency = 12, 
+                          start = c(year(df_MonthlyData_full$Date[1]),
+                                    month(df_MonthlyData_full$Date[1]))) 
+str(ts_MonthlyData_full)
+head(ts_MonthlyData_full)
+
+# Bio_SMKtest <- SeasonalMannKendall(ts_MonthlyData_full[,1])
+# print("Results for Seasonal Mann Kendall OF Biomass")
+# print(summary(Bio_SMKtest))
+
+#Mann-Kendall Correlation
+for(ColNum in 1:6){
+  SMKtest_MonthlyData <- SeasonalMannKendall(ts_MonthlyData_full[,ColNum])
+  print("Results for Seasonal Mann Kendall")
+  print(summary(SMKtest_MonthlyData))
+}
+
+#Spearman's Correlation
+for(ColNum in 1:6){
+  print("Results from Spearman Correlation")
+  sp_ror__MonthlyData=cor(inflow_data_yearly,my_year,method="spearman")
+  print(sp_ror__MonthlyData)
+}
+
+```
+
+## Decomposing the series
+
+For this part you will work only with the following columns: Solar Energy Consumption and Wind Energy Consumption. 
+
+### Q3
+
+Create a data frame structure with these two time series only and the Date column. Drop the rows with *Not Available* and convert the columns to numeric. You can use filtering to eliminate the initial rows or conver to numeric and then use the drop_na() function. If you are familiar with pipes for data wrangling, try using it!
+
+```{r}
+
+```
+
+### Q4
+
+Plot the Solar and Wind energy consumption over time using ggplot. Explore the function scale_x_date() on ggplot and see if you can change the x axis to improve your plot.
+Hint: use *scale_x_date(date_breaks = "5 years", date_labels = "%Y")")*
+
+Try changing the color of the wind series to blue. Hint: use *color = "blue"*
+
+```{r}
+
+```
+
+### Q5
+
+Transform wind and solar series into a time series object and apply the decompose function on them using the additive option. What can you say about the trend component? What about the random component? Does the random component look random? Or does it appear to still have some seasonality on it?
+
+```{r}
+
+```
+
+### Q6
+
+Use the decompose function again but now change the type of the seasonal component from additive to multiplicative.
+What happened to the random component this time? 
+```{r}
+
+```
+
+### Q7
+
+When fitting a model to this data, do you think you need all the historical data? Think about the date from 90s and early 20s. Are there any information from those year we might need to forecast the next six months of Solar and/or Wind consumption. Explain your response.

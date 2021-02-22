@@ -39,7 +39,7 @@ For this module we will work with monthly average for electricity retail price i
 ```{r}
 
 #Importing time series data from text file#
-electricity_price <- read.csv(file="./Data/Average_retail_price_of_electricity_United_States_monthly.csv",header=TRUE,skip=4)
+electricity_price <- read.csv(file="../Data/Average_retail_price_of_electricity_United_States_monthly.csv",header=TRUE,skip=4)
 
 #Inspect data
 head(electricity_price)
@@ -92,8 +92,12 @@ plot(TS_Plot)
 par(mar=c(3,3,3,0))
 
 ACF_Plot <- Acf(electricity_price_processed$Residential, lag = 40, plot = TRUE)
+  ## ACF should seasonality, and has correlation, it is not stationary 
 PACF_Plot <- Pacf(electricity_price_processed$Residential, lag = 40)
+  ## Pacf plot shows we might dealing with stochastic or unit root (means random)
 
+#Acf & Pacf from package forecast
+#acf & pacf from package stats
 ```
 
 
@@ -104,6 +108,7 @@ The plots from the previous section show the data has a seasonal component. Sinc
 ```{r}
 #Using R decompose function
 decompose_residential_price <- decompose(ts_electricity_price[,"Residential"],"additive")
+  ##可加性分解（additive）和可乘性分解（multiplicative）两种
 plot(decompose_residential_price)
 
 #Note the time is reversed on this plot. Price should be increasing over time
@@ -116,11 +121,11 @@ The ACF and PACF from the seasonal adjusted series will help you specify compone
 ```{r}
 
 #Creating non-seasonal residential price time series
-deseasonal_residential_price <- seasadj(decompose_residential_price)  
+deseasonal_residential_price <- seasadj(decompose_residential_price)  ## output is time series object
 
 df_residential <- data.frame( Month = electricity_price_processed$Month,
                              Residential = electricity_price_processed$Residential,
-                             NonSeasonalResidential = as.numeric(deseasonal_residential_price))
+                             NonSeasonalResidential = as.numeric(deseasonal_residential_price)) ## change to numeric
 
 ggplot(df_residential, aes(x=Month)) +
       geom_line(aes(x=Month,y=Residential),color="black") +
@@ -154,7 +159,7 @@ Always check for stationarity before fitting ARIMA models. This will help specif
 #adf.test(deseasonal_price,alternative="stationary")
 print((adf.test(deseasonal_residential_price,alternative="stationary")))
 
-#Note that p-value greater then 0.05 so we accept H0. Data has stochastic trend
+#Note that p-value greater then 0.05 so we accept H0. Data has stochastic trend(H0)
 #Lets difference the series to remove the trend.
 #Difference the data at lag 1
 deseasonal_residential_price_diff <- diff(deseasonal_residential_price,differences=1)
