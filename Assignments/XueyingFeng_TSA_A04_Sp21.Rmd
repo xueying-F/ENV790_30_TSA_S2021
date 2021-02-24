@@ -89,7 +89,6 @@ str(MonthlyData_subset_ts)
 ```{r}
 MonthlyData_subset_ts <- as.ts(MonthlyData_subset_ts[1:574,])
 MyDate <- as.Date(MonthlyData_subset$Date)
-head(MyDate)
 
 #create new df
 MonthlyData_new <- cbind.data.frame(MyDate, MonthlyData_subset_ts)
@@ -103,8 +102,18 @@ Now let's try to difference these three series using function diff(). Start with
 ```{r}
 MonthlyData_subset_ts_diff <- diff(MonthlyData_subset_ts, lag = 1, differences = 1)
 
+#plot
+plot(MonthlyData_subset_ts)
+plot(MonthlyData_subset_ts_diff)
+
+```
+
+### Q2
+Compute Mann-Kendall and Spearman's Correlation Rank Test for each time series. Ask R to print the results. Interpret the results. 
+```{r}
 # Change MonthlyData_subset_ts_diff to data frame
 df_diff<- as.data.frame(MonthlyData_subset_ts_diff)
+
 
 #Add the new series(frame?) to our data frame
 df_MonthlyData_full <- 
@@ -116,35 +125,6 @@ df_MonthlyData_full <-
 
 head(df_MonthlyData_full)
 
-
-#Comparing ACFs & PACFs
-#Biomass
-par(mar=c(3,3,3,0));par(mfrow=c(2,2))
-Acf(df_MonthlyData_full$Biomass,lag.max=40,main="Biomass ACF",ylim=c(-.2,1))
-Acf(df_MonthlyData_full$BioDiff,lag.max=40,main="Diff Biomass ACF",ylim=c(-.2,1))
-Pacf(df_MonthlyData_full$Biomass,lag.max=40,main="Biomass PACF",ylim=c(-.2,1))
-Pacf(df_MonthlyData_full$BioDiff,lag.max=40,main="Diff Biomass PACF",ylim=c(-.2,1))
-
-# RenewDiff
-par(mar=c(3,3,3,0));par(mfrow=c(2,2))
-Acf(df_MonthlyData_full$Renewable,lag.max=40,main="Renewable ACF",ylim=c(-.2,1))
-Acf(df_MonthlyData_full$RenewDiff,lag.max=40,main="Diff Renewable ACF",ylim=c(-.2,1))
-Pacf(df_MonthlyData_full$Renewable,lag.max=40,main="Renewable PACF",ylim=c(-.2,1))
-Pacf(df_MonthlyData_full$RenewDiff,lag.max=40,main="Diff Renewable PACF",ylim=c(-.2,1))
-
-# RenewDiff
-par(mar=c(3,3,3,0));par(mfrow=c(2,2))
-Acf(df_MonthlyData_full$Hydroelectric,lag.max=40,main="Hydroelectric ACF",ylim=c(-.2,1))
-Acf(df_MonthlyData_full$HydroDiff,lag.max=40,main="Diff Hydroelectric ACF",ylim=c(-.2,1))
-Pacf(df_MonthlyData_full$Hydroelectric,lag.max=40,main="Hydroelectric PACF",ylim=c(-.2,1))
-Pacf(df_MonthlyData_full$HydroDiff,lag.max=40,main="Diff Hydroelectric PACF",ylim=c(-.2,1))
-
-
-```
-
-### Q2
-Compute Mann-Kendall and Spearman's Correlation Rank Test for each time series. Ask R to print the results. Interpret the results. 
-```{r}
 #Since I have seasonal data I cannot use the simple MannKendall()
 #another example of functions that need a ts object
 ts_MonthlyData_full <- ts(df_MonthlyData_full[,2:7], 
@@ -153,10 +133,6 @@ ts_MonthlyData_full <- ts(df_MonthlyData_full[,2:7],
                                     month(df_MonthlyData_full$Date[1]))) 
 str(ts_MonthlyData_full)
 head(ts_MonthlyData_full)
-
-# Bio_SMKtest <- SeasonalMannKendall(ts_MonthlyData_full[,1])
-# print("Results for Seasonal Mann Kendall OF Biomass")
-# print(summary(Bio_SMKtest))
 
 #Mann-Kendall Correlation
 for(ColNum in 1:6){
@@ -183,9 +159,12 @@ for(ColNum in 1:6){
   str(MonthlyData_full_new_yearly)
   
   print("Results from Spearman Correlation")
-  SpCor_MonthlyData=cor(MonthlyData_full_yearly,Year,method="spearman")
+  SpCor_MonthlyData=cor.test(MonthlyData_full_yearly,Year,method="spearman")
   print(SpCor_MonthlyData)
 }
+
+#cor(MonthlyData_full_yearly,Year,method="spearman")
+
 ```
 
 
@@ -217,7 +196,7 @@ str(MonthlyData_subset2)
 
 # Change column names 
 #colnames(MonthlyData_subset2)[1] <- "Date"
-colnames(MonthlyData_subset2)=c("Date","Solar","Wind")
+colnames(MonthlyData_subset2) <- c("Date","Solar","Wind")
 MonthlyData_subset2$Date <- as.Date(MonthlyData_subset2$Date)
 str(MonthlyData_subset2)
 
@@ -237,7 +216,8 @@ tail(MonthlyData_subset_new)
 ```{r}
 # Create a data frame structure with these three time series
 # From Jan 1984 as a time series object
-MonthlyData_subset_ts2 <- ts(MonthlyData_subset_new[,2:3], frequency = 12, start = c(1984,1,1),end = c(2020,10,1)) 
+MonthlyData_subset_ts2 <- ts(MonthlyData_subset_new[,2:3], frequency = 12, 
+                             start = c(1984,1,1),end = c(2020,10,1)) 
 str(MonthlyData_subset_ts2)
 
 
@@ -289,7 +269,7 @@ decompose_Wind_ts2 <- decompose(MonthlyData_subset_ts2[,"Wind"],"additive")
 plot(decompose_Wind_ts2)
 
 ```
->The trend component of both of them is an increasing pattern. The random component is a regularly repeating pattern before 2015 in Solar dataset and before 2010 in Wind dataset.So there are some seasonality on that.
+>The trend component of both of them is an increasing pattern. The random component is not that kind of random and it is a regularly repeating pattern before 2015 in Solar dataset and before 2010 in Wind dataset. So there still are some seasonality on that.
 
 ### Q6
 
@@ -299,10 +279,12 @@ What happened to the random component this time?
 decompose_Solar_ts2 <- decompose(MonthlyData_subset_ts2[,"Solar"],"multiplicative")
 plot(decompose_Solar_ts2)
 
+#par(cex.lab=1.2)
 decompose_Wind_ts2 <- decompose(MonthlyData_subset_ts2[,"Wind"],"multiplicative")
 plot(decompose_Wind_ts2)
+
 ```
->The random outputs are different from "additive" ones. The regularly repeating pattern start from 1990 for Solar, and Start from 2000 in Wind.
+>The random outputs are different from "additive" ones. The random pattern occur bedore 1990 for Solar, and occur before 2000 in Wind.
 
 ### Q7
 
