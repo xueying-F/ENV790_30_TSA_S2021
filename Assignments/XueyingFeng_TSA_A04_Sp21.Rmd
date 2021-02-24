@@ -51,7 +51,8 @@ For this part you will once again work only with the following columns: Total Bi
 ```{r}
 #Importing data set
 
-MonthlyData <- read_excel("../Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",sheet = 1, skip = 9) 
+MonthlyData <- read_excel("../Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",
+                          sheet = 1, skip = 9) 
 
 # number of obs
 nobsv <- nrow(MonthlyData) 
@@ -72,7 +73,7 @@ str(MonthlyData_subset)
 ncoln<- ncol(MonthlyData_subset)-1
 
 # Change column names 
-colnames(MonthlyData_subset)[1] <- "Date"
+#colnames(MonthlyData_subset)[1] <- "Date"
 colnames(MonthlyData_subset)=c("Date","Biomass","Renewable","Hydroelectric")
 str(MonthlyData_subset)
 
@@ -164,14 +165,30 @@ for(ColNum in 1:6){
   print(summary(SMKtest_MonthlyData))
 }
 
-#Spearman's Correlation
-for(ColNum in 1:6){
-  print("Results from Spearman Correlation")
-  sp_ror__MonthlyData=cor(inflow_data_yearly,my_year,method="spearman")
-  print(sp_ror__MonthlyData)
-}
 
 ```
+
+```{r}
+for(ColNum in 1:6){
+  #Group data in yearly steps instances
+  ts_MonthlyData_full_matrix <- matrix(ts_MonthlyData_full[,ColNum],byrow=FALSE,nrow=12)
+  MonthlyData_full_yearly <- colMeans(ts_MonthlyData_full_matrix)
+  
+  #library(dplyr)  #move this to package chunk later
+  Year <- c(year(first(df_MonthlyData_full$Date)):year(last(df_MonthlyData_full$Date)))
+  
+  MonthlyData_full_new_yearly <- data.frame(Year, MonthlyData_full_yearly)
+  head(MonthlyData_full_new_yearly)
+  tail(MonthlyData_full_new_yearly)
+  str(MonthlyData_full_new_yearly)
+  
+  print("Results from Spearman Correlation")
+  SpCor_MonthlyData=cor(MonthlyData_full_yearly,Year,method="spearman")
+  print(SpCor_MonthlyData)
+}
+```
+
+
 
 ## Decomposing the series
 
@@ -182,8 +199,58 @@ For this part you will work only with the following columns: Solar Energy Consum
 Create a data frame structure with these two time series only and the Date column. Drop the rows with *Not Available* and convert the columns to numeric. You can use filtering to eliminate the initial rows or conver to numeric and then use the drop_na() function. If you are familiar with pipes for data wrangling, try using it!
 
 ```{r}
+#Importing data set
+MonthlyData2 <- read_excel("../Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx",
+                           sheet = 1, skip = 9) 
+# number of obs
+nobsv <- nrow(MonthlyData2) 
+
+# Select columns: Solar Energy Consumption and Wind Energy Consumption
+MonthlyData_subset2<- MonthlyData2[2:nobsv, c(1, 8, 9)] 
+
+# change'Not Available' to "NA"
+MonthlyData_subset2[] <- lapply(MonthlyData_subset2, gsub, pattern='Not Available', replacement='NA')
+
+# Checking data
+head(MonthlyData_subset2)
+str(MonthlyData_subset2)
+
+# Change column names 
+#colnames(MonthlyData_subset2)[1] <- "Date"
+colnames(MonthlyData_subset2)=c("Date","Solar","Wind")
+MonthlyData_subset2$Date <- as.Date(MonthlyData_subset2$Date)
+str(MonthlyData_subset2)
+
+# change character format to numeric format
+MonthlyData_subset2[,2:3] <- sapply(MonthlyData_subset2[,2:3],as.numeric)
+
+# Drop NA
+#library(dplyr)
+MonthlyData_subset_new <- na.omit(MonthlyData_subset2)
+str(MonthlyData_subset_new)
+head(MonthlyData_subset_new)
+tail(MonthlyData_subset_new)
+
 
 ```
+
+```{r}
+# Create a data frame structure with these three time series
+# From Jan 1984 as a time series object
+MonthlyData_subset_ts2 <- ts(MonthlyData_subset_new[,2:3], frequency = 12, start = c(1984,1,1),end = c(2020,10,1)) 
+str(MonthlyData_subset_ts2)
+
+
+MyDate2 <- as.Date(MonthlyData_subset_new$Date)
+head(MyDate2)
+
+#create new df
+MonthlyData_new2 <- cbind.data.frame(MyDate2, MonthlyData_subset_ts2)
+str(MonthlyData_new2)
+class(MonthlyData_new2)
+head(MonthlyData_new2)
+```
+
 
 ### Q4
 
@@ -194,6 +261,17 @@ Try changing the color of the wind series to blue. Hint: use *color = "blue"*
 
 ```{r}
 
+ggplot(MonthlyData_new2) +
+  geom_line(aes(MyDate2, y=Solar, colour = "Solar")) + 
+  geom_line(aes(MyDate2, y = Wind, colour = "Wind")) +
+  ggtitle("Solar and Wind energy consumption over time") +
+  xlab("Year") + 
+  ylab("Energy consumption (Trillion Btu)") +
+  scale_x_date(date_breaks = "5 years", date_labels = "%Y") +
+  scale_colour_manual("", values = c("Solar" = "red", "Wind"= "blue")) +
+  theme(axis.text.x = element_text(angle = 45,  hjust = 1),
+        plot.title = element_text(hjust=0.5))
+
 ```
 
 ### Q5
@@ -201,17 +279,33 @@ Try changing the color of the wind series to blue. Hint: use *color = "blue"*
 Transform wind and solar series into a time series object and apply the decompose function on them using the additive option. What can you say about the trend component? What about the random component? Does the random component look random? Or does it appear to still have some seasonality on it?
 
 ```{r}
+str(MonthlyData_subset_ts2)
+
+#Using R decompose function
+decompose_Solar_ts2 <- decompose(MonthlyData_subset_ts2[,"Solar"],"additive")
+plot(decompose_Solar_ts2)
+
+decompose_Wind_ts2 <- decompose(MonthlyData_subset_ts2[,"Wind"],"additive")
+plot(decompose_Wind_ts2)
 
 ```
+>The trend component of both of them is an increasing pattern. The random component is a regularly repeating pattern before 2015 in Solar dataset and before 2010 in Wind dataset.So there are some seasonality on that.
 
 ### Q6
 
 Use the decompose function again but now change the type of the seasonal component from additive to multiplicative.
 What happened to the random component this time? 
 ```{r}
+decompose_Solar_ts2 <- decompose(MonthlyData_subset_ts2[,"Solar"],"multiplicative")
+plot(decompose_Solar_ts2)
 
+decompose_Wind_ts2 <- decompose(MonthlyData_subset_ts2[,"Wind"],"multiplicative")
+plot(decompose_Wind_ts2)
 ```
+>The random outputs are different from "additive" ones. The regularly repeating pattern start from 1990 for Solar, and Start from 2000 in Wind.
 
 ### Q7
 
 When fitting a model to this data, do you think you need all the historical data? Think about the date from 90s and early 20s. Are there any information from those year we might need to forecast the next six months of Solar and/or Wind consumption. Explain your response.
+>If there is a consistent pattern for all historical data, then it is useful to fit the model and predict the future trend.
+>For Solar and/or Wind consumption dataset, I think the data after 1990 in Solar and after 2000 in Wind should be use to forecast the next six month comsumption.
