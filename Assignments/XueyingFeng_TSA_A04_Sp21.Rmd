@@ -83,11 +83,11 @@ str(MonthlyData_subset)
 
 # Create a data frame structure with these three time series
 # From Jan 1973 to Oct 2020 as a time series object
-MonthlyData_subset_ts <- ts(MonthlyData_subset[,2:4], frequency = 12, start = c(1973, 1, 1), end = c(2020, 10, 1)) 
+MonthlyData_subset_ts <- ts(MonthlyData_subset[,2:4], frequency = 12, 
+                            start = c(1973, 1, 1), end = c(2020, 10, 1)) 
 str(MonthlyData_subset_ts)
 ```
 ```{r}
-MonthlyData_subset_ts <- as.ts(MonthlyData_subset_ts[1:574,])
 MyDate <- as.Date(MonthlyData_subset$Date)
 
 #create new df
@@ -102,6 +102,9 @@ Now let's try to difference these three series using function diff(). Start with
 ```{r}
 MonthlyData_subset_ts_diff <- diff(MonthlyData_subset_ts, lag = 1, differences = 1)
 
+# Change MonthlyData_subset_ts_diff to data frame
+#df_diff<- as.data.frame(MonthlyData_subset_ts_diff)
+
 #plot
 plot(MonthlyData_subset_ts)
 plot(MonthlyData_subset_ts_diff)
@@ -110,63 +113,88 @@ plot(MonthlyData_subset_ts_diff)
 
 ### Q2
 Compute Mann-Kendall and Spearman's Correlation Rank Test for each time series. Ask R to print the results. Interpret the results. 
+
 ```{r}
-# Change MonthlyData_subset_ts_diff to data frame
-df_diff<- as.data.frame(MonthlyData_subset_ts_diff)
-
-
-#Add the new series(frame?) to our data frame
-df_MonthlyData_full <- 
-  MonthlyData_subset %>% 
-  cbind(BioDiff = c(NA,as.numeric(df_diff$Biomass))) %>% 
-  cbind(RenewDiff = c(NA,as.numeric(df_diff$Renewable))) %>% 
-  cbind(HydroDiff = c(NA,as.numeric(df_diff$Hydroelectric))) %>% 
-  na.omit(df_MonthlyData_full)
-
-head(df_MonthlyData_full)
-
-#Since I have seasonal data I cannot use the simple MannKendall()
-#another example of functions that need a ts object
-ts_MonthlyData_full <- ts(df_MonthlyData_full[,2:7], 
-                          frequency = 12, 
-                          start = c(year(df_MonthlyData_full$Date[1]),
-                                    month(df_MonthlyData_full$Date[1]))) 
-str(ts_MonthlyData_full)
-head(ts_MonthlyData_full)
-
-#Mann-Kendall Correlation
-for(ColNum in 1:6){
-  SMKtest_MonthlyData <- SeasonalMannKendall(ts_MonthlyData_full[,ColNum])
+#Mann-Kendall Correlation 
+#There is seasonality in Hydro data, so use "SeasonalMannKendall"
+for(ColNum in 1:3){
+  SMKtest_MonthlyData <- SeasonalMannKendall(MonthlyData_subset_ts[,ColNum])
   print("Results for Seasonal Mann Kendall")
   print(summary(SMKtest_MonthlyData))
 }
+```
+>All p value are less than 0.05, so they all have significant correlation between two variables (time and energy data). Biomass and Renweable data has the positive correlation, but hydro one has negative correlation.
 
+```{r}
+#Because we know hydro data has seasonality from Assignment3 Question6, 
+#so we need to deseason the hydro data first.
+
+EnergyType=3
+
+#First create the seasonal dummies
+Energy_dummies <- seasonaldummy(MonthlyData_subset_ts[,EnergyType])
+
+#this function only accepts ts object, no need to add one here because date 
+#object is not a column
+
+#Then fit a linear model to the seasonal dummies
+seasonal_model=lm(MonthlyData_subset[,(EnergyType+1)]~Energy_dummies)
+print(summary(seasonal_model))
+
+#Look at the regression coefficient. These will be the values of Beta
+
+#Store regression coefficients
+beta_int=seasonal_model$coefficients[1]
+beta_coeff=seasonal_model$coefficients[2:12]
+
+#compute seasonal component
+seasonal_comp=array(0,nobsv-1)
+for(n in 1:nobsv-1){
+  seasonal_comp[n]=(beta_int+beta_coeff%*%Energy_dummies[n,])
+}
+
+#Removing seasonal component
+Deseason_Hydro_data <- MonthlyData_subset[,(1+EnergyType)]-seasonal_comp
+
+str(Deseason_Hydro_data)
+```
+```{r}
+#change deseason hydro num to data frame
+Deseason_Hydro <- as.data.frame(Deseason_Hydro_data)
+
+#create new data frame with Original Biomass, Renewable, and deseason hydro data
+df_MonthlyData_new <- 
+  subset(MonthlyData_subset, select = -Hydroelectric) %>% 
+  cbind(Deseason_Hydro)
+head(df_MonthlyData_new)
+
+#Change new data frame to ts format
+df_MonthlyData_new_ts <- ts(df_MonthlyData_new[,2:4], frequency = 12, 
+                            start = c(1973, 1, 1), end = c(2020, 10, 1)) 
+str(df_MonthlyData_new_ts)
 
 ```
 
 ```{r}
-for(ColNum in 1:6){
+for(ColNum in 1:3){
   #Group data in yearly steps instances
-  ts_MonthlyData_full_matrix <- matrix(ts_MonthlyData_full[,ColNum],byrow=FALSE,nrow=12)
-  MonthlyData_full_yearly <- colMeans(ts_MonthlyData_full_matrix)
+  MonthlyData_new_matrix <- matrix(df_MonthlyData_new_ts[,1],byrow=FALSE,nrow=12)
+  YearlyData_mean <- colMeans(MonthlyData_new_matrix)
   
   #library(dplyr)  #move this to package chunk later
-  Year <- c(year(first(df_MonthlyData_full$Date)):year(last(df_MonthlyData_full$Date)))
+  Year <- c(year(first(df_MonthlyData_new$Date)):year(last(df_MonthlyData_new$Date)))
   
-  MonthlyData_full_new_yearly <- data.frame(Year, MonthlyData_full_yearly)
-  head(MonthlyData_full_new_yearly)
-  tail(MonthlyData_full_new_yearly)
-  str(MonthlyData_full_new_yearly)
+  YearlyData <- data.frame(Year, YearlyData_mean)
+  str(YearlyData)
   
   print("Results from Spearman Correlation")
-  SpCor_MonthlyData=cor.test(MonthlyData_full_yearly,Year,method="spearman")
+  SpCor_MonthlyData=cor.test(YearlyData_mean,Year,method="spearman")
   print(SpCor_MonthlyData)
 }
 
-#cor(MonthlyData_full_yearly,Year,method="spearman")
-
+#cor(YearlyData,Year,method="spearman")
 ```
-
+> All rho are almost 0.9, which shows  strong positive relationship between the Energy data and time. And all p value are less than 0.05, so they all have significant correlation with each other.
 
 
 ## Decomposing the series
@@ -191,7 +219,6 @@ MonthlyData_subset2<- MonthlyData2[2:nobsv, c(1, 8, 9)]
 MonthlyData_subset2[] <- lapply(MonthlyData_subset2, gsub, pattern='Not Available', replacement='NA')
 
 # Checking data
-head(MonthlyData_subset2)
 str(MonthlyData_subset2)
 
 # Change column names 
@@ -218,16 +245,12 @@ tail(MonthlyData_subset_new)
 # From Jan 1984 as a time series object
 MonthlyData_subset_ts2 <- ts(MonthlyData_subset_new[,2:3], frequency = 12, 
                              start = c(1984,1,1),end = c(2020,10,1)) 
-str(MonthlyData_subset_ts2)
-
 
 MyDate2 <- as.Date(MonthlyData_subset_new$Date)
-head(MyDate2)
 
 #create new df
 MonthlyData_new2 <- cbind.data.frame(MyDate2, MonthlyData_subset_ts2)
 str(MonthlyData_new2)
-class(MonthlyData_new2)
 head(MonthlyData_new2)
 ```
 
