@@ -178,7 +178,7 @@ str(df_MonthlyData_new_ts)
 ```{r}
 for(ColNum in 1:3){
   #Group data in yearly steps instances
-  MonthlyData_new_matrix <- matrix(df_MonthlyData_new_ts[,1],byrow=FALSE,nrow=12)
+  MonthlyData_new_matrix <- matrix(df_MonthlyData_new_ts[,ColNum],byrow=FALSE,nrow=12)
   YearlyData_mean <- colMeans(MonthlyData_new_matrix)
   
   #library(dplyr)  #move this to package chunk later
@@ -194,7 +194,7 @@ for(ColNum in 1:3){
 
 #cor(YearlyData,Year,method="spearman")
 ```
-> All rho are almost 0.9, which shows  strong positive relationship between the Energy data and time. And all p value are less than 0.05, so they all have significant correlation with each other.
+> First two rho are almost 0.9, which shows strong positive relationship between the Energy data and time. The last one shows negative relationship. And all p value are less than 0.05, so they all have significant correlation with each other.
 
 
 ## Decomposing the series
