@@ -77,9 +77,20 @@ BR_complete <- inner_join(Rainfall_BR_processed,Temp_BR_processed)
 ## Initial plots
 
 ```{r}
-
+str(BR_complete)
 #Exercise 2: Plot both series over time on separate plots. Add a trend line using geom_smooth(). Can you say something about the trend just by visualizing the data?
 
+
+ggplot(BR_complete, aes(x=Date, y=Rainfall)) +
+   geom_line() +
+   geom_smooth()+
+   labs(title = "Rainfall")
+
+
+ggplot(BR_complete, aes(x=Date, y=Temperature_C)) +
+   geom_line() +
+   geom_smooth()+
+   labs(title = "Temperature_C")
 
 ```
 
@@ -87,8 +98,11 @@ BR_complete <- inner_join(Rainfall_BR_processed,Temp_BR_processed)
 
 ```{r}
 #Exercise 3: Create a time series objects for each series using ts(). Make sure you specify the starting point and frequency.
+Rainfall_ts <- ts(BR_complete$Rainfall, frequency = 12, start = c(1901, 1, 1), end = c(2016, 12, 1)) 
+str(Rainfall_ts)
 
-
+Temperature_C_ts <- ts(BR_complete$Temperature_C, frequency = 12, start = c(1901, 1, 1), end = c(2016, 12, 1)) 
+str(Temperature_C_ts)
 
 ```
 
@@ -97,7 +111,7 @@ BR_complete <- inner_join(Rainfall_BR_processed,Temp_BR_processed)
 
 So far we have used the `stats::decompose()` function to get the three components of the time series. Today I will introduce you to alternative functions.
 
-* `stats::stl()`: decompose a time series into seasonal, trend and irregular components using loess (locally weighted scatterplot smoothing). Need to specify `s.window = "period"`. That will default seasonal period to be equal frequency established in ts().
+* `stats::stl()`: decompose a time series into seasonal, trend and irregular components using loss (locally weighted scatter plot smoothing). Need to specify `s.window = "period"`. That will default seasonal period to be equal frequency established in ts().
 
 Disadvantage: stl() does not allow for multiplicative component. But you only need when working with data that has exponential growth like the wind generation from A4.
 
@@ -110,20 +124,23 @@ Advantage: able to handle data that has multiple seasonal periods.
 ```{r}
 
 # Exercise 4: Use the stl() function to decompose both series. 
-
-
+Rainfall_decompose <- stl(Rainfall_ts, s.window = "period")
+Temperature_C_decompose <- stl(Temperature_C_ts, s.window = "period")
 
 # Exercise 5: Use the times series object generated with the stl() to extract the 
 # components of each series and turn them into data frames.
 
-
+Rainfall_decompose_df <- data.frame(Rainfall_decompose$time.series)
+Temperature_C_decompose_df <- data.frame(Temperature_C_decompose$time.series)
 
 
 # Exercise 6: Visualize how the trend maps onto the data for both series
+par(mfrow=c(1,2))
+plot(Rainfall_decompose_df$trend, type = "l")
 
 
-
-
+plot(Rainfall_decompose_df)
+plot(Temperature_C_decompose)
 
 
 ```
