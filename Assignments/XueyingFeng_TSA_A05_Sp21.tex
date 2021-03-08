@@ -100,6 +100,8 @@
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 \setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{enumerate}
+\usepackage{enumitem}
 \ifluatex
   \usepackage{selnolig}  % disable illegal ligatures
 \fi
@@ -221,11 +223,9 @@ function (ACF) plot and the partial sample autocorrelation function
 \item AR(2)
 
 > Answer: The stationary series has positive autocorrelation at lag 1 in ACF; Order should see PACF, cutoff count from Lag1
-
 \item MA(1)
 
 > Answer: The stationary series has negative autocorrelation at lag 1 in ACF; Order should see ACF, cutoff count from Lag1
-
 \end{enumerate}
 
 \hypertarget{q2}{%
@@ -245,10 +245,6 @@ three models
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{\#Consider three models: ARMA(1,0), ARMA(0,1) and ARMA(1,1) }
-\CommentTok{\#with parameters φ = 0.6 and θ = 0.9. The φ refers to the AR coefficient }
-\CommentTok{\#and the θ refers to the MA coefficient. }
-\CommentTok{\#Use R to generate n = 100 observations from each of these three models}
 \FunctionTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
 \NormalTok{ARMA11 }\OtherTok{\textless{}{-}} \FunctionTok{arima.sim}\NormalTok{(}\AttributeTok{model=}\FunctionTok{list}\NormalTok{(}\AttributeTok{ar=}\NormalTok{.}\DecValTok{6}\NormalTok{,}\AttributeTok{ma=}\NormalTok{.}\DecValTok{9}\NormalTok{),}\AttributeTok{n=}\DecValTok{100}\NormalTok{)}
 \NormalTok{ARMA01 }\OtherTok{\textless{}{-}} \FunctionTok{arima.sim}\NormalTok{(}\AttributeTok{model=}\FunctionTok{list}\NormalTok{(}\AttributeTok{ma=}\NormalTok{.}\DecValTok{9}\NormalTok{),}\AttributeTok{n=}\DecValTok{100}\NormalTok{)}
@@ -258,18 +254,14 @@ three models
 
 \begin{enumerate}[label=(\alph*)]
 
-\item Plot the sample ACF for each of these models in one window to facilitate comparison (Hint: use command $par(mfrow=c(1,3))$ that divides the plotting window in three columns).  
+\item Plot the sample ACF for each of these models in one window to facilitate comparison (Hint: use command $par(mfrow=c(1,3))$ that divides the plotting window in three columns). 
 
 
 ```r
-ARMA11.acf <- acf(ARMA11,plot=F)
-ARMA01.acf <- acf(ARMA01,plot=F)
-ARMA10.acf <- acf(ARMA10,plot=F)
-
 par(mar=c(3,3,3,0));par(mfrow=c(1,3))
-plot(ARMA11.acf)
-plot(ARMA01.acf)
-plot(ARMA10.acf)
+Acf(ARMA11, lag.max = NULL, plot = TRUE)
+Acf(ARMA01, lag.max = NULL, plot = TRUE)
+Acf(ARMA10, lag.max = NULL, plot = TRUE)
 ```
 
 ![](XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-3-1.pdf)<!-- --> 
@@ -279,21 +271,20 @@ plot(ARMA10.acf)
 
 
 ```r
-ARMA11.pacf <- pacf(ARMA11,plot=F)
-ARMA01.pacf <- pacf(ARMA01,plot=F)
-ARMA10.pacf <- pacf(ARMA10,plot=F)
-
 par(mar=c(3,3,3,0));par(mfrow=c(1,3))
-plot(ARMA11.pacf)
-plot(ARMA01.pacf)
-plot(ARMA10.pacf)
+Pacf(ARMA11, lag.max = NULL, plot = TRUE)
+Pacf(ARMA01, lag.max = NULL, plot = TRUE)
+Pacf(ARMA10, lag.max = NULL, plot = TRUE)
 ```
 
 ![](XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-4-1.pdf)<!-- --> 
 
 \item Look at the ACFs and PACFs. Imagine you had these plots for a data set and you were asked to identify the model, i.e., is it AR, MA or ARMA and the order of each component. Would you be identify them correctly? Explain your answer.
 
-> Answer:
+> Answer: I would not identify them correctly. 
+I may identify ARMA11 plot as AR process, because this series has positive autocorrelation at lag 1, and shows decreasing pattern in ACF plot. Order = 4
+ARMA10 has positive autocorrelation at lag 1, AR terms work best, and order = 1. 
+ARMA01 the spike lie between two dotted line in ACF, and pacf does not have clearly tapering pattern. It is a white noise time serie
 
 \item Compare the ACF and PACF values R computed with the theoretical values you provided for the coefficients. Do they match? Explain your answer.
 
@@ -310,31 +301,24 @@ ARMA01 <- arima.sim(model=list(ma=.9),n=1000)
 ARMA10 <- arima.sim(model=list(ar=.6),n=1000)
 
 #ACF
-ARMA11.acf <- acf(ARMA11,plot=F)
-ARMA01.acf <- acf(ARMA01,plot=F)
-ARMA10.acf <- acf(ARMA10,plot=F)
-
 par(mar=c(3,3,3,0));par(mfrow=c(1,3))
-plot(ARMA11.acf)
-plot(ARMA01.acf)
-plot(ARMA10.acf)
+Acf(ARMA11, lag.max = NULL, plot = TRUE)
+Acf(ARMA01, lag.max = NULL, plot = TRUE)
+Acf(ARMA10, lag.max = NULL, plot = TRUE)
 ```
 
 ![](XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-5-1.pdf)<!-- --> 
 
 ```r
 #PACF
-ARMA11.pacf <- pacf(ARMA11,plot=F)
-ARMA01.pacf <- pacf(ARMA01,plot=F)
-ARMA10.pacf <- pacf(ARMA10,plot=F)
-
 par(mar=c(3,3,3,0));par(mfrow=c(1,3))
-plot(ARMA11.pacf)
-plot(ARMA01.pacf)
-plot(ARMA10.pacf)
+Pacf(ARMA11, lag.max = NULL, plot = TRUE)
+Pacf(ARMA01, lag.max = NULL, plot = TRUE)
+Pacf(ARMA10, lag.max = NULL, plot = TRUE)
 ```
 
 ![](XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-5-2.pdf)<!-- --> 
+>
 
 \end{enumerate}
 
