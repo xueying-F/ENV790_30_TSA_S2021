@@ -43,7 +43,8 @@ Describe the important characteristics of the sample autocorrelation function (A
 
 \item AR(2)
 
-> Answer: The stationary series has positive autocorrelation at lag 1 in ACF; Order should see PACF, cutoff count from Lag1
+> Answer: The stationary series has positive autocorrelation at lag 1 in ACF, and the ACF exponentially decays to 0 as the lag increases; Order should see PACF, cutoff count from Lag 1
+
 \item MA(1)
 
 > Answer: The stationary series has negative autocorrelation at lag 1 in ACF; Order should see ACF, cutoff count from Lag1
