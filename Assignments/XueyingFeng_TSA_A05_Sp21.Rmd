@@ -85,9 +85,9 @@ Pacf(ARMA10, lag.max = NULL, plot = TRUE)
 \item Look at the ACFs and PACFs. Imagine you had these plots for a data set and you were asked to identify the model, i.e., is it AR, MA or ARMA and the order of each component. Would you be identify them correctly? Explain your answer.
 
 > Answer: I would not identify them correctly. 
-I may identify ARMA11 plot as AR process, because this series has positive autocorrelation at lag 1, and shows decay pattern in ACF plot. Order = 4
-ARMA01 ACF plot the spike lie between two dotted line in ACF, and pacf does not have clearly decay pattern, so it is hard to tell it is a MA process.
-ARMA10 ACF plot has positive autocorrelation at lag 1 and show decay pattern, AR terms work best, and order = 1. 
+I may identify ARMA11 plot as AR process, because this series has positive autocorrelation at lag 1, and shows decay pattern in ACF plot. However, both ACF and PACF show slow decay. Hence, the ARMA (1,1) model would also be appropriate for the series. So I should experiment with both ARMA (1,1) and AR for the process and later select the optimal model. Base on plot, order = 4
+ARMA01 pacf shows slow decay, but no nagetive autocorrelation at lag 1 in ACF, so it is hard to tell it is a MA process.
+ARMA10 ACF plot has positive autocorrelation at lag 1 and ACF shows sharp decay, AR terms work best, and order = 1. 
 
 \item Compare the ACF and PACF values R computed with the theoretical values you provided for the coefficients. Do they match? Explain your answer.
 
