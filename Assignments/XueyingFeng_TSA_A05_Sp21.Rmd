@@ -160,7 +160,7 @@ Acf(ARIMAModel, lag.max = NULL)
 Pacf(ARIMAModel, lag.max = NULL)
 
 ```
-> Order of non-seasonal is 3 based on the PACF plot. It is hard to identify the order of seasonal components, because after lag 3, values in PACF are not significant. Seasonal component cannot be identified.
+>We can tell s=12 based on the spike at lag 12 is significant in ACF plot. It is hard to identify the order of seasonal components, because after lag 3, values in PACF are not significant；after lag 16, values in ACF are not significant. 
 
 
 
