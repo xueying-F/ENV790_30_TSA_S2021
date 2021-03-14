@@ -190,7 +190,7 @@ default packages.\textbackslash{}
 \end{Shaded}
 
 \begin{verbatim}
-## -- Attaching packages ---------------------------------- tidyverse 1.3.0.9000 --
+## -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
 \end{verbatim}
 
 \begin{verbatim}
@@ -218,15 +218,31 @@ Describe the important characteristics of the sample autocorrelation
 function (ACF) plot and the partial sample autocorrelation function
 (PACF) plot for the following models:
 
-\begin{enumerate}[label=(\alph*)]
-
-\item AR(2)
-
-> Answer: The stationary series has positive autocorrelation at lag 1 in ACF; Order should see PACF, cutoff count from Lag1
-\item MA(1)
-
-> Answer: The stationary series has negative autocorrelation at lag 1 in ACF; Order should see ACF, cutoff count from Lag1
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\tightlist
+\item
+  AR(2)
 \end{enumerate}
+
+\begin{quote}
+Answer: The stationary series has positive autocorrelation at lag 1 in
+ACF, and the ACF exponentially decays to 0 as the lag increases; Order
+should see PACF, cutoff count from Lag 1
+\end{quote}
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  MA(1)
+\end{enumerate}
+
+\begin{quote}
+Answer: The stationary series has negative autocorrelation at lag 1 in
+ACF; Order should see ACF, cutoff count from Lag1
+\end{quote}
 
 \hypertarget{q2}{%
 \subsection{Q2}\label{q2}}
@@ -252,75 +268,123 @@ three models
 \end{Highlighting}
 \end{Shaded}
 
-\begin{enumerate}[label=(\alph*)]
-
-\item Plot the sample ACF for each of these models in one window to facilitate comparison (Hint: use command $par(mfrow=c(1,3))$ that divides the plotting window in three columns). 
-
-
-```r
-par(mar=c(3,3,3,0));par(mfrow=c(1,3))
-Acf(ARMA11, lag.max = NULL, plot = TRUE)
-Acf(ARMA01, lag.max = NULL, plot = TRUE)
-Acf(ARMA10, lag.max = NULL, plot = TRUE)
-```
-
-![](XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-3-1.pdf)<!-- --> 
-
-
-\item Plot the sample PACF for each of these models in one window to facilitate comparison.  
-
-
-```r
-par(mar=c(3,3,3,0));par(mfrow=c(1,3))
-Pacf(ARMA11, lag.max = NULL, plot = TRUE)
-Pacf(ARMA01, lag.max = NULL, plot = TRUE)
-Pacf(ARMA10, lag.max = NULL, plot = TRUE)
-```
-
-![](XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-4-1.pdf)<!-- --> 
-
-\item Look at the ACFs and PACFs. Imagine you had these plots for a data set and you were asked to identify the model, i.e., is it AR, MA or ARMA and the order of each component. Would you be identify them correctly? Explain your answer.
-
-> Answer: I would not identify them correctly. 
-I may identify ARMA11 plot as AR process, because this series has positive autocorrelation at lag 1, and shows decreasing pattern in ACF plot. Order = 4
-ARMA10 has positive autocorrelation at lag 1, AR terms work best, and order = 1. 
-ARMA01 the spike lie between two dotted line in ACF, and pacf does not have clearly tapering pattern. It is a white noise time serie
-
-\item Compare the ACF and PACF values R computed with the theoretical values you provided for the coefficients. Do they match? Explain your answer.
-
-> Answer: 
-
-
-\item Increase number of observations to $n=1000$ and repeat parts (a)-(d).
-
-
-```r
-set.seed(123)
-ARMA11 <- arima.sim(model=list(ar=.6,ma=.9),n=1000)
-ARMA01 <- arima.sim(model=list(ma=.9),n=1000)
-ARMA10 <- arima.sim(model=list(ar=.6),n=1000)
-
-#ACF
-par(mar=c(3,3,3,0));par(mfrow=c(1,3))
-Acf(ARMA11, lag.max = NULL, plot = TRUE)
-Acf(ARMA01, lag.max = NULL, plot = TRUE)
-Acf(ARMA10, lag.max = NULL, plot = TRUE)
-```
-
-![](XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-5-1.pdf)<!-- --> 
-
-```r
-#PACF
-par(mar=c(3,3,3,0));par(mfrow=c(1,3))
-Pacf(ARMA11, lag.max = NULL, plot = TRUE)
-Pacf(ARMA01, lag.max = NULL, plot = TRUE)
-Pacf(ARMA10, lag.max = NULL, plot = TRUE)
-```
-
-![](XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-5-2.pdf)<!-- --> 
->
-
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\tightlist
+\item
+  Plot the sample ACF for each of these models in one window to
+  facilitate comparison (Hint: use command par(mfrow=c(1,3)) that
+  divides the plotting window in three columns).
 \end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mar=}\FunctionTok{c}\NormalTok{(}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{0}\NormalTok{));}\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow=}\FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{))}
+\FunctionTok{Acf}\NormalTok{(ARMA11, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\FunctionTok{Acf}\NormalTok{(ARMA01, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\FunctionTok{Acf}\NormalTok{(ARMA10, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-3-1.pdf}
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Plot the sample PACF for each of these models in one window to
+  facilitate comparison.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mar=}\FunctionTok{c}\NormalTok{(}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{0}\NormalTok{));}\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow=}\FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{))}
+\FunctionTok{Pacf}\NormalTok{(ARMA11, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\FunctionTok{Pacf}\NormalTok{(ARMA01, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\FunctionTok{Pacf}\NormalTok{(ARMA10, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-4-1.pdf}
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  Look at the ACFs and PACFs. Imagine you had these plots for a data set
+  and you were asked to identify the model, i.e., is it AR, MA or ARMA
+  and the order of each component. Would you be identify them correctly?
+  Explain your answer.
+\end{enumerate}
+
+\begin{quote}
+Answer: I would not identify them correctly. I may identify ARMA11 plot
+as AR process, because this series has positive autocorrelation at lag
+1, and shows decay pattern in ACF plot. However, both ACF and PACF show
+slow decay. Hence, the ARMA (1,1) model would also be appropriate for
+the series. So I should experiment with both ARMA (1,1) and AR for the
+process and later select the optimal model. Base on plot, order = 4
+ARMA01 pacf shows slow decay, but no nagetive autocorrelation at lag 1
+in ACF, so it is hard to tell it is a MA process. ARMA10 ACF plot has
+positive autocorrelation at lag 1 and ACF shows sharp decay, AR terms
+work best, and order = 1.
+\end{quote}
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  Compare the ACF and PACF values R computed with the theoretical values
+  you provided for the coefficients. Do they match? Explain your answer.
+\end{enumerate}
+
+\begin{quote}
+Answer: I can only tell the phi in AR plot (third plot), which almost
+equals to theoretical values phi=0.6.
+\end{quote}
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  Increase number of observations to \(n=1000\) and repeat parts
+  (a)-(d).
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
+\NormalTok{ARMA11 }\OtherTok{\textless{}{-}} \FunctionTok{arima.sim}\NormalTok{(}\AttributeTok{model=}\FunctionTok{list}\NormalTok{(}\AttributeTok{ar=}\NormalTok{.}\DecValTok{6}\NormalTok{,}\AttributeTok{ma=}\NormalTok{.}\DecValTok{9}\NormalTok{),}\AttributeTok{n=}\DecValTok{1000}\NormalTok{)}
+\NormalTok{ARMA01 }\OtherTok{\textless{}{-}} \FunctionTok{arima.sim}\NormalTok{(}\AttributeTok{model=}\FunctionTok{list}\NormalTok{(}\AttributeTok{ma=}\NormalTok{.}\DecValTok{9}\NormalTok{),}\AttributeTok{n=}\DecValTok{1000}\NormalTok{)}
+\NormalTok{ARMA10 }\OtherTok{\textless{}{-}} \FunctionTok{arima.sim}\NormalTok{(}\AttributeTok{model=}\FunctionTok{list}\NormalTok{(}\AttributeTok{ar=}\NormalTok{.}\DecValTok{6}\NormalTok{),}\AttributeTok{n=}\DecValTok{1000}\NormalTok{)}
+
+\CommentTok{\#ACF}
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mar=}\FunctionTok{c}\NormalTok{(}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{0}\NormalTok{));}\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow=}\FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{))}
+\FunctionTok{Acf}\NormalTok{(ARMA11, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\FunctionTok{Acf}\NormalTok{(ARMA01, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\FunctionTok{Acf}\NormalTok{(ARMA10, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-5-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#PACF}
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mar=}\FunctionTok{c}\NormalTok{(}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{0}\NormalTok{));}\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow=}\FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{))}
+\FunctionTok{Pacf}\NormalTok{(ARMA11, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\FunctionTok{Pacf}\NormalTok{(ARMA01, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\FunctionTok{Pacf}\NormalTok{(ARMA10, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{, }\AttributeTok{plot =} \ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{XueyingFeng_TSA_A05_Sp21_files/figure-latex/unnamed-chunk-5-2.pdf}
+\textgreater{} When I increased to 1000 obsevation, the pattern is very
+similar as 100 obsevation.
 
 \hypertarget{q3}{%
 \subsection{Q3}\label{q3}}
@@ -328,16 +392,31 @@ Pacf(ARMA10, lag.max = NULL, plot = TRUE)
 Consider the ARIMA model
 \(y_t=0.7*y_{t-1}-0.25*y_{t-12}+a_t-0.1*a_{t-1}\)
 
-\begin{enumerate}[label=(\alph*)]
-
-\item Identify the model using the notation ARIMA$(p,d,q)(P,D,Q)_ s$, i.e., identify the integers $p,d,q,P,D,Q,s$ (if possible) from the equation.
-
->p = 1, d = 0, q = 1, P = 1, D = 1, Q = 0, s = 12
-
-
-\item Also from the equation what are the values of the parameters, i.e., model coefficients. 
-
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\tightlist
+\item
+  Identify the model using the notation ARIMA\((p,d,q)(P,D,Q)_ s\),
+  i.e., identify the integers \(p,d,q,P,D,Q,s\) (if possible) from the
+  equation.
 \end{enumerate}
+
+\begin{quote}
+p = 1, d = 0, q = 1, P = 1, D = 0, Q = 0, s = 12 ARIMA(1,0,1)(1,0,0)12
+\end{quote}
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Also from the equation what are the values of the parameters, i.e.,
+  model coefficients.
+\end{enumerate}
+
+\begin{quote}
+phi1 = 0.7, phi12 = -0.25 and theta = -0.1
+\end{quote}
 
 \hypertarget{q4}{%
 \subsection{Q4}\label{q4}}
@@ -355,12 +434,81 @@ from the plots? Explain.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{phi }\OtherTok{=} \FunctionTok{c}\NormalTok{(}\FunctionTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{11}\NormalTok{), }\FloatTok{0.8}\NormalTok{)}
-\NormalTok{ACF }\OtherTok{=} \FunctionTok{ARMAacf}\NormalTok{(}\AttributeTok{ar =}\NormalTok{ phi, }\AttributeTok{ma =} \FloatTok{0.5}\NormalTok{, }\DecValTok{50}\NormalTok{)[}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{]}
-\NormalTok{PACF }\OtherTok{=} \FunctionTok{ARMAacf}\NormalTok{(}\AttributeTok{ar =}\NormalTok{ phi, }\AttributeTok{ma =} \FloatTok{0.5}\NormalTok{, }\DecValTok{50}\NormalTok{, }\AttributeTok{pacf =} \ConstantTok{TRUE}\NormalTok{)}
-\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
-\FunctionTok{plot}\NormalTok{(ACF, }\AttributeTok{type =} \StringTok{"h"}\NormalTok{, }\AttributeTok{xlab =} \StringTok{"lag"}\NormalTok{, }\AttributeTok{ylim =} \FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{.}\DecValTok{4}\NormalTok{, .}\DecValTok{8}\NormalTok{)); }\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \DecValTok{0}\NormalTok{)}
-\FunctionTok{plot}\NormalTok{(PACF, }\AttributeTok{type =} \StringTok{"h"}\NormalTok{, }\AttributeTok{xlab =} \StringTok{"lag"}\NormalTok{, }\AttributeTok{ylim =} \FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{.}\DecValTok{4}\NormalTok{, .}\DecValTok{8}\NormalTok{)); }\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \DecValTok{0}\NormalTok{)}
+\CommentTok{\#install.packages(sarima)}
+\CommentTok{\#install.packages(glmnet)}
+\CommentTok{\#install.packages(bestglm)}
+
+\CommentTok{\#library(glmnet)}
+\CommentTok{\#library(bestglm)}
+\FunctionTok{library}\NormalTok{(sarima)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: FitAR
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: lattice
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: leaps
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: ltsa
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: bestglm
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'FitAR'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:forecast':
+## 
+##     BoxCox
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: stats4
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{require}\NormalTok{(}\StringTok{"PolynomF"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: PolynomF
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'PolynomF'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:purrr':
+## 
+##     zap
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# yt = phi ∗ yt−12 + at − theta ∗ at−1}
+
+\NormalTok{ARIMAModel }\OtherTok{\textless{}{-}} \FunctionTok{sim\_sarima}\NormalTok{(}\AttributeTok{n=}\DecValTok{1000}\NormalTok{, }\AttributeTok{model =} \FunctionTok{list}\NormalTok{(}\AttributeTok{ar=}\FloatTok{0.8}\NormalTok{, }\AttributeTok{ma=}\FloatTok{0.5}\NormalTok{, }\AttributeTok{sar=}\DecValTok{0}\NormalTok{, }\AttributeTok{sma=}\DecValTok{0}\NormalTok{, }\AttributeTok{iorder=}\DecValTok{0}\NormalTok{, }\AttributeTok{siorder=}\DecValTok{0}\NormalTok{, }\AttributeTok{nseasons=}\DecValTok{12}\NormalTok{))}
+
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mar=}\FunctionTok{c}\NormalTok{(}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{0}\NormalTok{));}\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow=}\FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
+\FunctionTok{Acf}\NormalTok{(ARIMAModel, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{)}
+\FunctionTok{Pacf}\NormalTok{(ARIMAModel, }\AttributeTok{lag.max =} \ConstantTok{NULL}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
