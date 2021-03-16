@@ -149,18 +149,20 @@ Plot the ACF and PACF of a seasonal ARIMA$(0, 1)\times(1, 0)_{12}$ model with $\
 #library(bestglm)
 library(sarima)
 
-require("PolynomF")
+#require("PolynomF")
 
 # yt = phi ∗ yt−12 + at − theta ∗ at−1
-
-ARIMAModel <- sim_sarima(n=1000, model = list(ar=0.8, ma=0.5, sar=0, sma=0, iorder=0, siorder=0, nseasons=12))
+set.seed(999)
+ARIMAModel <- sim_sarima(n=3000, model = list(ar=0, ma=0.5, sar=0.8, sma=0, iorder=0, siorder=0, nseasons=12))
 
 par(mar=c(3,3,3,0));par(mfrow=c(1,2))
 Acf(ARIMAModel, lag.max = NULL)
 Pacf(ARIMAModel, lag.max = NULL)
 
 ```
->We can tell s=12 based on the spike at lag 12 is significant in ACF plot. It is hard to identify the order of seasonal components, because after lag 3, values in PACF are not significant；after lag 16, values in ACF are not significant. 
+>We can tell s=12 based on the spike at lag 12 and lag 24 is significant in ACF plot. The spikes shows slow decay in the ACF, and this is characteristic of the AR. Because this model has seasonal MA terms, the PACF should taper seasonally, that is near S=12 and 2*S=24, but hard to tell near lag 24. So, in my perspective, order of both non-seasonal and seasonal components from the plots cannot tell clearly.
+
+
 
 
 
