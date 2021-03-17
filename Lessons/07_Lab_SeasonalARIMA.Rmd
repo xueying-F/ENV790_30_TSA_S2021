@@ -178,7 +178,8 @@ From now on let's focus on the temperature series only.
 ```{r}
 #Exercise 10: Use the auto.arima() to fit a model to the temperature series. Compare the results with the model you specified in Exercise 11. Do they match? Which is a better fit based on AIC?
 
-
+SARIMA_Temp <- auto.arima(Temperature_C_ts)
+summary(SARIMA_Temp)
 
 
 
@@ -192,10 +193,14 @@ The ARIMA family has another variation called ARIMAX that allows you to add exog
 ```{r}
 #Exercise 11: Plot a scatterplot Temperature ~ Rainfall. Can you see a relationship? Can you tell if it's linear? Run a regression using the `lm()` to support your answer.
 
-
+ggplot(BR_complete, aes(x=Rainfall, y=Temperature_C)) +
+  geom_point() +
+  geom_smooth(method = "lm")
 
 #Exercise 12: Repeat 12 but now add Rainfall as a regressor, i.e., xreg=Rainfall.
 
+SARIMA_Temp_Exo <- auto.arima(Temperature_C_ts, xreg= Rainfall_ts)
+summary(SARIMA_Temp_Exo)
 
 ```
 

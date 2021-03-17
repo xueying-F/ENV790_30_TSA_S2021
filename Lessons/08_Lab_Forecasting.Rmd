@@ -110,7 +110,8 @@ Ex1: Which models could be used to forecast the non-seasonal temperature series?
 
 
 ```{r}
-
+#seasonal naive
+#Arima
 
 ```
 
