@@ -40,13 +40,13 @@ Today we will work with data from the Climate Change Knowledge Portal from the W
 Research question: Can you see any changes on the rainfall regime or average temperature over time?
 
 ```{r}
-#Exercise 1: Look at the code I used to import and tidy the dataset for today. Make sure you unerstant the pipe structure. 
+#Exercise 1: Look at the code I used to import and tidy the dataset for today. Make sure you understand the pipe structure. 
 
 Rainfall_BR <- read.csv("./Data/pr_1901_2016_BRA.csv", stringsAsFactors = TRUE)
 
 Temp_BR <- read.csv("./Data/tas_1901_2016_BRA.csv", stringsAsFactors = TRUE)
 
-#Within the pipe I am performing the follwoign steps:
+#Within the pipe I am performing the following steps:
 #a Rename the column with Rainfall to get rid of the dots.
 #b Note that on both data sets that is a column with the month name and average. Convert it to a Month column by separating the string, i.e., month in one column and the word "Average" on another. Hint: use the separate() function in the pipe.
 #c Now you should have a column with Month. Use the paste0() function to paste month and year together and create a date object.
@@ -188,7 +188,7 @@ summary(SARIMA_Temp)
 
 ## Adding explanantory variables to the model
 
-The ARIMA family has another variation called ARIMAX that allows you to add exogenous variables to you ARIMA model. The argument on the auto.arima that allows you to add an external regressor is the `xreg=`. For example, could rainfall explain some of the variability in temperature? 
+The ARIMA family has another variation called ARIMAX that allows you to add exogenous variables to you ARIMA model. The argument on the auto.arima() that allows you to add an external regressor is the `xreg=`. For example, could rainfall explain some of the variability in temperature? 
 
 ```{r}
 #Exercise 11: Plot a scatterplot Temperature ~ Rainfall. Can you see a relationship? Can you tell if it's linear? Run a regression using the `lm()` to support your answer.
