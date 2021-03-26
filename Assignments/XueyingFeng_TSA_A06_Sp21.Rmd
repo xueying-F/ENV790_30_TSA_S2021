@@ -50,7 +50,7 @@ Packages needed for this assignment: "forecast","tseries". Do not forget to load
 
 Import the csv file and create a time series object for natural gas. Make you sure you specify the **start=** and **frequency=** arguments. Plot the time series over time, ACF and PACF.
 
-```{r}
+```{r Dataset}
 NetGen <- read.csv("../Data/Net_generation_United_States_all_sectors_monthly.csv",skip = 4)
 head(NetGen)
 
@@ -106,7 +106,7 @@ PACF_Plot <- Pacf(NetGen$NG, lag = 40)
 
 Using the $decompose()$ or $stl()$ and the $seasadj()$ functions create a series without the seasonal component, i.e., a deseasonalized natural gas series. Plot the deseasonalized series over time and corresponding ACF and PACF. Compare with the plots obtained in Q1.
 
-```{r}
+```{r deseasonalized series}
 #Using R decompose function
 decompose_ts_NetGen <- decompose(ts_NetGen[,"NG"],"additive")
 plot(decompose_ts_NetGen)
@@ -122,24 +122,25 @@ seasadj_ACF_Plot <- Acf(seasadj_ts_NetGen, lag = 40, plot = TRUE)
 seasadj_PACF_Plot <- Pacf(seasadj_ts_NetGen, lag = 40)
 ```
 
+
 ## Modeling the seasonally adjusted or deseasonalized series
 
 ### Q3
 
 Run the ADF test and Mann Kendall test on the deseasonalized data from Q2. Report and explain the results.
 
-```{r ADF}
+```{r stat test}
 #Run ADF
 ADFtest <- adf.test(seasadj_ts_NetGen,alternative="stationary")
 print(ADFtest)
 
 #Run MannKendall
 library(Kendall)
-print("Results of Mann Kendall on average yearly series")
+print("Results of Mann Kendall:")
 print(summary(MannKendall(seasadj_ts_NetGen)))
 ```
 >Augmented Dickey-Fuller test:  the p-value of the test is lower than significance level 0.05, then it is stationary.
->Mann Kendall: the p-value of the test is lower than  significance level 0.05 , then there is statistically significant evidence that a trend is present in the time series data.
+>Mann Kendall: the p-value of the test is lower than  significance level 0.05 , then there is statistically significant evidence that a monotonic trend is present in the time series data.
 
 
 ### Q4
@@ -147,31 +148,29 @@ print(summary(MannKendall(seasadj_ts_NetGen)))
 Using the plots from Q2 and test results from Q3 identify the ARIMA model parameters $p,d$ and $q$. Note that in this case because you removed the seasonal component prior to identifying the model you don't need to worry about seasonal component. Clearly state your criteria and any additional function in R you might use. DO NOT use the $auto.arima()$ function. You will be evaluated on ability to can read the plots and interpret the test results.
 
 >The stationary series has positive autocorrelation at lag 1, then autoregressive model(AR) terms work best. 
-It is a autoregressive model with p=2 also because of a slow decay in the ACF plot and a clear cut off at lag 2 in the PACF plot (p=1).
-We assume we are  working with a zero-mean process,leading to the conclusion that d=0.
+It is a autoregressive model with p=2 also because of a slow decay in the ACF plot and a clear cut off at lag 1 in the PACF plot (p=1).
+We assume we are working with a non-zero mean process,leading to the conclusion that d=1.
 
 
 ### Q5
 
 Use $Arima()$ from package "forecast" to fit an ARIMA model to your series considering the order estimated in Q4. Should you allow for constants in the model, i.e., $include.mean = TRUE$ or $include.drift=TRUE$. **Print the coefficients** in your report. Hint: use the $cat()$ function to print.
 
-```{r}
-Arima.model <- Arima(seasadj_ts_NetGen,order=c(1,0,0),include.mean=TRUE)
+```{r Arima()}
+Arima.model <- Arima(seasadj_ts_NetGen,order=c(1,1,0),include.constant =TRUE)
 print(Arima.model)
 
-#cat("coefficients is:", )                       
-
+cat("coefficients is:", Arima.model$coef)                       
 
 ```
 
 ### Q6
 
 Now plot the residuals of the ARIMA fit from Q5 along with residuals ACF and PACF on the same window. You may use the $checkresiduals()$ function to automatically generate the three plots. Do the residual series look like a white noise series? Why?
-```{r}
+```{r Arima fit}
 checkresiduals(Arima.model)
-#The residual series do not look like a white noise series, because it is not between two blue dotted lines.
-
 ```
+>The residual series do not look like a white noise series, because it is not between two blue dotted lines.
 
 ## Modeling the original series (with seasonality)
 
@@ -179,30 +178,57 @@ checkresiduals(Arima.model)
 
 Repeat Q4-Q6 for the original series (the complete series that has the seasonal component). Note that when you model the seasonal series, you need to specify the seasonal part of the ARIMA model as well, i.e., $P$, $D$ and $Q$.
 
-```{r}
+```{r ACF and PACF}
 #ACF and PACF plots
 par(mar=c(3,3,3,0));par(mfrow=c(1,2))
-ACF_Plot <- Acf(NetGen$NG, lag = 40, plot = TRUE)
-PACF_Plot <- Pacf(NetGen$NG, lag = 40)
-
-#For the order of the non-seasonal component, we focus on the early lags (ex.before lag=12). We can see that ACF shows a slow decay and PACF has a clear cut off at lag 2, which indicates that the non-seasonal component has AR process, p=2.
+ACF_Plot <- Acf(ts_NetGen[,"NG"], lag = 40, plot = TRUE)
+PACF_Plot <- Pacf(ts_NetGen[,"NG"], lag = 40)
+```
+>For the order of the non-seasonal component, we focus on the early lags (ex.before lag=12). We can see that ACF shows a slow decay and PACF has a clear cut off at lag 1, which indicates that the non-seasonal component has AR process, p=1.
 #As for the seasonal component, we are only intrested at seasonal lags 12, 24, 36 and so forth. We can see that the ACF has multiple spikes at the seasonal lags and PACF has only one spike at lag 12. It shows that we should include a SAR process, P=1.
 
-Arima.Sea.odel <-Arima(ts_NetGen[,"NG"], order=c(1,0,0), seasonal=list(order=c(1,0,0),include.mean=TRUE, period=12))
-summary(Arima.Sea.odel)
-checkresiduals(Arima.Sea.odel)
-#The residual series do look like a white noise series, because only one spike is not in two dotted line. 
+```{r Check ADF and MannKendall}
+NG <- ts_NetGen[,"NG"]
 
+#Run ADF
+ADFtest2 <- adf.test(NG,alternative="stationary")
+print(ADFtest2)
+
+#Run MannKendall
+#library(Kendall)
+print("Results of Mann Kendall:")
+print(summary(MannKendall(NG)))
 ```
+>Augmented Dickey-Fuller test:  the p-value of the test is lower than significance level 0.05, then it is stationary.
+>Mann Kendall: the p-value of the test is lower than  significance level 0.05 , then there is statistically significant evidence that a monotonic trend is present in the time series data.
+
+```{r diff()}
+## Use diff() to remove the trend and seasonal signal time series
+B <- diff(ts_NetGen[,"NG"], differences = 12)
+## plot the differenced data
+plot(B)
+
+#par(mar=c(3,3,3,0));par(mfrow=c(1,2))
+#ACF_Plot <- Acf(B, lag = 40, plot = TRUE)
+#PACF_Plot <- Pacf(B, lag = 40)
+```
+
+
+```{r ArimaModel}
+Arima.Sea.odel <-Arima(ts_NetGen[,"NG"], order=c(1,1,0), seasonal=list(order=c(1,1,0),include.constant=TRUE, period=12))
+summary(Arima.Sea.odel)
+
+checkresiduals(Arima.Sea.odel)
+cat("coefficients is:", Arima.Sea.odel$coef)
+```
+>The residual series do look like a white noise series, because only two spikes are not in two dotted line. 
 
 
 ### Q8
 
 Compare the residual series for Q7 and Q6. Can you tell which ARIMA model is better representing the Natural Gas Series? Is that a fair comparison? Explain your response.
 
-```{r}
-#I can tell which ARIMA model is better representing the Natural Gas Series, and second one is better.But I dont think that is a fair comparison, because the pdq and PDQ value that we tell from plot is not accurate.
-```
+>I can tell which ARIMA model is better representing the Natural Gas Series, and second one is better.But I dont think that is a fair comparison, because the pdq and PDQ values that we tell from plot are not accurate.
 
 
 ## Checking your model with the auto.arima()
@@ -217,7 +243,7 @@ Use the $auto.arima()$ command on the **deseasonalized series** to let R choose 
 SARIMA_autofit <- auto.arima(seasadj_ts_NetGen)
 print(SARIMA_autofit)
 checkresiduals(SARIMA_autofit)
-# order is 1, and it only matches the p value what I specified in Q4
+# order is 1, and it matches the p and d values what I specified in Q4
 ```
 
 
