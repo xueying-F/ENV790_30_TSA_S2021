@@ -44,7 +44,7 @@ For this module we will continue to work with the electricity retail price in US
 
 #Importing time series data from text file#
 electricity_price <- read.csv(
-  file="./Data/Average_retail_price_of_electricity_United_States_monthly.csv",
+  file="../Data/Average_retail_price_of_electricity_United_States_monthly.csv",
   header=TRUE,
   skip=4)
 

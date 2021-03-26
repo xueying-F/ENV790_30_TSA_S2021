@@ -55,24 +55,24 @@ $MPE = \sum((Actual - Forecast)/Actual)/n*100$
 $MAPE = \sum|Actual - Forecast|/Actual/n*100$ 
 
 ```{r}
-actual=c(107,125,115,118,108)
-forecast=c(110,121,112,120,109)
+Actual=c(107,125,115,118,108)
+Forecast=c(110,121,112,120,109)
 
 #Exercise 1: compute MAD, MSE and MAPE
-n=length(actual)
+n=length(Actual)
 
-ME = 
-MSE = 
-RMSE = 
-MAE = 
-MPE = 
-MAPE = 
+ME = sum(Actual - Forecast)/n
+MSE = sum((Actual - Forecast)^2)/n
+RMSE = sqrt(MSE)
+MAE = sum(abs(Actual - Forecast))/n
+MPE = sum((Actual - Forecast)/Actual)/n*100
+MAPE = sum(abs(Actual - Forecast)/Actual)/n*100
 
 
 
 #Exercise 2: Compute the forecast accuracy metrics you calculated in Ex 1 with the results from accuracy() function.
-
-
+auto_scores <- as.data.frame(accuracy(Forecast, Actual))
+auto_scores
 ```
 
 ## Importing data
@@ -83,9 +83,9 @@ Research question: Can you forecast temperature for the next two months?
 
 ```{r}
 # Import both datasets using the read.csv function.
-Rainfall_BR <- read.csv("./Data/pr_1901_2016_BRA.csv", stringsAsFactors = TRUE)
+Rainfall_BR <- read.csv("../Data/pr_1901_2016_BRA.csv", stringsAsFactors = TRUE)
 
-Temp_BR <- read.csv("./Data/tas_1901_2016_BRA.csv", stringsAsFactors = TRUE)
+Temp_BR <- read.csv("../Data/tas_1901_2016_BRA.csv", stringsAsFactors = TRUE)
 
 # Tidy the rainfall data sets.
 #a Rename the column with Rainfall to get rid of the dots.
@@ -144,9 +144,15 @@ BR_Temp_ts_deseas <- seasadj(BR_Temp_Decomposed)
 Which models could be used to forecast the non-seasonal temperature series? When fitting a model it's important to do the backward-looking assessment. Check residuals to see if your model is well representing the historical data.
 
 ```{r}
-#Exercise 3: Try fitting different model to the deseasonal series. Check teh residuals using the checkresiduals() function.
+#Exercise 3: Try fitting different model to the deseasonal series. Check the residuals using the checkresiduals() function.
+MEAN_seas <- meanf(y = BR_Temp_ts_deseas, h = 12)
+checkresiduals(MEAN_seas) # ACF is highly dependency
 
+SNAIVE_seas <- snaive(BR_Temp_ts_deseas, h=12)
+checkresiduals(SNAIVE_seas)
 
+SARIMA_autofit <- auto.arima(BR_Temp_ts_deseas)
+checkresiduals(SARIMA_autofit) # ACF all in dotted blue lines, residuals not auto-related
 
 ```
 
@@ -157,7 +163,19 @@ In the lesson we used function `accuracy()` to calculate performance measures li
 ```{r}
 
 #Exercise 4: Apply function accuracy() to the forecasts generated with each model you fit for the non-seasonal data on Ex 3. 
+#Model 1: Arithmetic mean
+MEAN_scores <- accuracy(MEAN_seas)  #store the performance metrics
+plot(MEAN_seas)  #plot forecasts
 
+#Model 2: Seasonal naive 
+SNAIVE_scores <- accuracy(SNAIVE_seas)
+plot(SNAIVE_seas)
+
+# Model 3:  SARIMA 
+#remember auto.arima does not call the forecast() internally so we need one more step
+SARIMA_for <- forecast(SARIMA_autofit,h=12)
+SARIMA_scores <- accuracy(SARIMA_for)
+plot(SARIMA_for)
 
 
 ```
@@ -166,10 +184,16 @@ A better visualization of the results from `accuracy()` can be obtained by creat
 
 ```{r}
 # Exercise 5: create data frame that combines metrics for all the models you created on Ex 3.
-
+#create data frame
+seas_scores <- as.data.frame(rbind(MEAN_scores, SNAIVE_scores, SARIMA_scores))
+row.names(seas_scores) <- c("MEAN", "SNAIVE","SARIMA")
+                            
 
 # Exercise 6: Decide which model is the best fit by comparing the RMSE metric, i.e, choose model with lowest RMSE
-                    
+
+#choose model with lowest RMSE
+best_model_index <- which.min(seas_scores[,"RMSE"])
+cat("The best model by RMSE is:", row.names(seas_scores[best_model_index,]))                        
                             
 ```
 
@@ -177,5 +201,10 @@ A better visualization of the results from `accuracy()` can be obtained by creat
 
 ```{r}
 # Exercise 7: Generate a comparison table for your report using the kbl() function. 
-
+kbl(seas_scores, 
+      caption = "Forecast Accuracy for Seasonal Data",
+      digits = array(5,ncol(seas_scores))) %>%
+  kable_styling(full_width = FALSE, position = "center") %>%
+  #highlight model with lowest RMSE
+  kable_styling(latex_options="striped", stripe_index = which.min(seas_scores[,"RMSE"]))
 ```
