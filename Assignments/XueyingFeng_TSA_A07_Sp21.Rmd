@@ -21,9 +21,16 @@ When you have completed the assignment, **Knit** the text and code into a single
 
 Some packages needed for this assignment: `forecast`,`tseries`,`smooth`. Do not forget to load them before running your script, since they are NOT default packages.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 #Load/install required package here
-
+library(lubridate)
+library(ggplot2)
+library(forecast)  
+library(Kendall)
+library(tseries)
+#library(outliers)
+library(tidyverse)
+library(smooth)
 ```
 
 ## Importing and processing the data set
@@ -39,6 +46,33 @@ For all parts of the assignment prepare the data set such that the model conside
 Read the file into a data frame. Prepare your time series data vector such that observations start in January 2000 and end in December 2009. Make you sure you specify the **start=** and **frequency=** arguments. Plot the time series over time, ACF and PACF.
 
 ```{r}
+#Read the file into a data frame
+Data <- read.table(file="../Data/inflowtimeseries.txt",header=FALSE,skip=0)
+
+#Select last column of the data set which represents one hydro plant in the Amazon river basin
+inflow_data <- Data[,c(1:2,17)] 
+
+#Rename columns
+colnames(inflow_data)=c("Month","Year", "MonthlyInflow")
+#attach(inflow_data)
+
+#Observations start in January 2000 and end in December 2009
+sample<-inflow_data[which(inflow_data$Year>=2000 & inflow_data$Year<=2009),]
+full<-inflow_data[which(inflow_data$Year>=2000 & inflow_data$Year<=2010),]
+
+#Convert to time series
+sample_ts<-ts(sample$MonthlyInflow, frequency = 12, start = c(2000,1))
+full_ts<-ts(full$MonthlyInflow, frequency = 12, start = c(2000,1))
+
+
+#Plot the time series
+plot(sample_ts)
+
+
+#ACF and PACF plots
+par(mar=c(3,3,3,0));par(mfrow=c(1,2))
+ACF_Plot <- Acf(sample_ts, lag = 40, plot = TRUE,main="ACF of sample_ts")
+PACF_Plot <- Pacf(sample_ts, lag = 40, plot = TRUE,main="PACF of sample_ts")
 
 ```
 
@@ -47,7 +81,24 @@ Read the file into a data frame. Prepare your time series data vector such that 
 Using the $decompose()$ or $stl()$ and the $seasadj()$ functions create a series without the seasonal component, i.e., a deseasonalized inflow series. Plot the deseasonalized series and original series together using ggplot, make sure your plot includes a legend. Plot ACF and PACF for the deaseasonalized series. Compare with the plots obtained in Q1.
 
 ```{r}
+# Using R decompose function
+decompose_sample_ts <- decompose(sample_ts)
+plot(decompose_sample_ts)
 
+# Using R seasadj function
+sample_deseason <- seasadj(decompose_sample_ts) 
+plot(sample_deseason)
+
+# Make a basic graph
+plot(sample_ts, type="l", xlab="Year",ylab="Monthly inflow (m^3/s)")
+lines(sample_deseason, col="blue")
+
+# Add a legend
+legend("topright", 
+  legend = c("original data", "deseasonal data"), 
+  col = c("black", "blue"),
+  lty=1:1, 
+  cex=0.8)
 ```
 
 ## Part II: Forecasting with ARIMA models and its variations
@@ -57,6 +108,23 @@ Using the $decompose()$ or $stl()$ and the $seasadj()$ functions create a series
 Fit a non-seasonal ARIMA$(p,d,q)$ model usign the auto.arima() function to the non-seasonal data. Forecast 12 months ahead of time using the $forecast()$ function. Plot your forecasting results and further include on the plot the last year of non-seasonal data to compare with forecasted values (similar to the plot on the lesson file for M10).
 
 ```{r}
+fit_sample_deseason <- auto.arima(sample_deseason, max.D=0, max.P=0,max.Q=0)
+#checkresiduals(fit_sample_deseason)
+
+nonseas_ARIMA_forecast <- forecast(fit_sample_deseason, h=12)
+plot(nonseas_ARIMA_forecast)
+
+# Using R seasadj function on Full data 2000-2010
+full_deseason <- seasadj(decompose(full_ts))
+
+#Make new plot
+plot(nonseas_ARIMA_forecast, type="l", xlab="Year",ylab="Monthly inflow (m^3/s)")
+lines(full_deseason, col="red")
+legend("topright", 
+  legend=c("12-month-ahead forecast with nonseasonal data (2000-2009)","original nonseasonal data(2000-2010)"), 
+  col = c("black", "red"),
+  lty=1:1, 
+  cex=0.7)
 
 ```
 
@@ -74,12 +142,59 @@ Put the seasonality back on your forecasted values and compare with the original
 Repeat Q3 for the original data, but now fit a seasonal ARIMA$(p,d,q)x(P,D,Q)_ {12}$ also using the auto.arima().
 
 ```{r}
+#Use the ndiffs() and nsdiffs()to find out. Always start with nsdiffs().
+#nsdiffs estimates the number of seasonal differences necessary.
+nsdiffs(sample_ts)
+## output: 1
+
+diff_sample_ts <- diff(sample_ts, differences = 1, lag = 12)
+ndiffs(diff_sample_ts)
+## output: 0
+#We got D=1 and d=0 
+
+#Need to look at ACF/PACF of the differenced series to find order of the model
+par(mfrow=c(1,2))
+ACF_Plot <- Acf(diff_sample_ts, lag = 40, plot = TRUE,main="")
+PACF_Plot <- Pacf(diff_sample_ts, lag = 40, plot = TRUE,main="")
+
+# the seasonal component inverted. Now multiple spikes on PACF and only 1 on ACF, meaning we have a SMA model.
+# And for the non-seasonal lags we see positive values at lag1, meaning we could have a AR model. But there is cut-off at 1  so we could again be dealing with AR model. 
+
+#Using Arima
+fit_sample_original <- Arima(sample_ts, order=c(1,0,0), seasonal=list(order=c(0,1,1),include.constant=TRUE, period=12))
+print(fit_sample_original)
+checkresiduals(fit_sample_original)
+
+#Using auto.arima
+fit_sample_original1 <- auto.arima(sample_ts)
+checkresiduals(fit_sample_original1)
 
 ```
+```{r}
+original_ARIMA_forecast <- forecast(fit_sample_original1, h=12)
+plot(original_ARIMA_forecast)
+
+# Using R seasadj function on Full data 2000-2010
+#full_deseason <- seasadj(decompose(full_ts))
+
+plot(original_ARIMA_forecast, type="l", xlab="Year",ylab="Monthly inflow (m^3/s)")
+lines(full_ts, col="red")
+legend("topright", 
+  legend=c("12-month-ahead forecast with original data (2000-2009)","original data(2000-2010)"), 
+  col = c("black", "red"),
+  lty=1:1, 
+  cex=0.7)
+
+```
+
 
 ### Q6
 
 Compare the plots from Q4 and Q5 using the autoplot() function.
+
+```{r}
+
+```
 
 ## Part III: Forecasting with Other Models
 
@@ -88,7 +203,9 @@ Compare the plots from Q4 and Q5 using the autoplot() function.
 Fit an exponential smooth model to the original time series using the function $es()$  from package `smooth`. Note that this function automatically do the forecast. Do not forget to set the arguments: silent=FALSE and holdout=FALSE, so that the plot is produced and the forecast is for the year of 2010.
 
 ```{r}
-
+SSES_seas <- es(sample_ts,model="ZZZ",h=n_for,silent="none",holdout=FALSE)
+plot(SSES_seas)
+checkresiduals(SSES_seas)
 ```
 
 ### Q8
@@ -96,7 +213,14 @@ Fit an exponential smooth model to the original time series using the function $
 Fit a state space model to the original time series using the function $StructTS()$ from package `stats`. Which one of the tree model we learned should you try: "local", "trend", or "BSM". Why? Play with argument `fixed` a bit to try to understand how the different variances can affect the model. If you can't seem to find a variance that leads to a good fit here is a hint: try $fixed=c(0.1, 0.001, NA, NA)$. Since $StructTS()$ fits a state space model to the data, you need to use $forecast()$ to generate the forecasts. Like you do for the ARIMA fit. 
 
 ```{r}
+SS_seas <- StructTS(sample_ts,
+                    type="BSM",fixed=c(0,0.001,0.3,NA))   #this function has convergence issues
+checkresiduals(SS_seas)
 
+#Generating forecasts
+# StructTS() does not call the forecast() internally so we need one more step
+SS_for <- forecast(SS_seas,h=n_for)
+plot(SS_for)
 ```
 
 ## Part IV: Checking Forecast Accuracy
