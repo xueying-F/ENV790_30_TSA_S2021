@@ -1,6 +1,6 @@
 ---
 title: "ENV 790.30 - Time Series Analysis for Energy Data | Spring 2021"
-author: "Student Name"
+author: "Xueying Feng"
 subtitle: Assignment 7 - Due date 04/07/21
 output:
   pdf_document: default
@@ -10,6 +10,9 @@ geometry: margin=2.54cm
 header-includes:
 - \usepackage{enumerate}
 - \usepackage{enumitem}
+editor_options:
+  chunk_output_type: inline
+
 ---
 
 ## Directions
@@ -93,7 +96,8 @@ sample_deseason <- seasadj(decompose_sample_ts)
 plot(sample_deseason)
 
 # Make a basic graph
-plot(sample_ts, type="l", xlab="Year",ylab="Monthly inflow (m^3/s)")
+par(mar=c(2,5,0,2))
+plot(sample_ts, type="l", xlab="Year",ylab=expression(paste("Monthly inflow (", m^3, "/","s)", sep="")))
 lines(sample_deseason, col="blue")
 
 # Add a legend
@@ -121,7 +125,8 @@ plot(nonseas_ARIMA_forecast)
 full_deseason <- seasadj(decompose(full_ts))
 
 #Make new plot
-plot(nonseas_ARIMA_forecast, type="l", xlab="Year",ylab="Monthly inflow (m^3/s)")
+par(mar=c(2,5,5,2))
+plot(nonseas_ARIMA_forecast, type="l", xlab="Year",ylab=expression(paste("Monthly inflow (", m^3, "/","s)", sep="")))
 lines(full_deseason, col="red")
 legend("topright", 
   legend=c("12-month-ahead forecast with nonseasonal data (2000-2009)","original nonseasonal data(2000-2010)"), 
@@ -154,13 +159,14 @@ forecasted_seasonality
 #plot(forecasted_seasonality)
 
 #Make new plot
-plot(full_ts, type="l", xlab="Year",ylab="Monthly inflow (m^3/s)")
+par(mar=c(2,5,3,2))
+plot(full_ts, type="l", xlab="Year",ylab=expression(paste("Monthly inflow (", m^3, "/","s)", sep="")))
 lines(forecasted_seasonality, col="red")
 legend("topright", 
   legend=c("original seasonal data(2000-2010)","forecast data with seasonality(2010)"), 
   col = c("black", "red"),
   lty=1:1, 
-  cex=0.7)
+  cex=0.5)
 
 ```
 
@@ -204,13 +210,14 @@ plot(SARIMA_forecast)
 # Using R seasadj function on Full data 2000-2010
 #full_deseason <- seasadj(decompose(full_ts))
 
-plot(SARIMA_forecast, type="l", xlab="Year",ylab="Monthly inflow (m^3/s)")
+par(mar=c(2,5,3,2))
+plot(SARIMA_forecast, type="l", xlab="Year",ylab=expression(paste("Monthly inflow (", m^3, "/","s)", sep="")))
 lines(full_ts, col="red")
 legend("topright", 
   legend=c("12-month-ahead forecast with original data (2000-2009)","original data(2000-2010)"), 
   col = c("black", "red"),
   lty=1:1, 
-  cex=0.7)
+  cex=0.5)
 
 ```
 
@@ -220,11 +227,12 @@ legend("topright",
 Compare the plots from Q4 and Q5 using the autoplot() function.
 
 ```{r}
+par(mar=c(2,5,3,2))
 autoplot(full_ts) +
   autolayer(forecasted_seasonality, PI=FALSE, series="Forecasted with seasonality") +
   autolayer(SARIMA_forecast, PI=FALSE, series="SARIMA") +
   xlab("Year") + 
-  ylab("Monthly inflow (m^3/s)") +
+  ylab(expression(paste("Monthly inflow (", m^3, "/","s)", sep=""))) +
   guides(colour=guide_legend(title="Forecast"))
 ```
 
@@ -235,7 +243,7 @@ autoplot(full_ts) +
 Fit an exponential smooth model to the original time series using the function $es()$  from package `smooth`. Note that this function automatically do the forecast. Do not forget to set the arguments: silent=FALSE and holdout=FALSE, so that the plot is produced and the forecast is for the year of 2010.
 
 ```{r}
-SSES_seas <- es(sample_ts,model="ZZZ",h=12,silent="none",holdout=FALSE)
+SSES_seas <- es(sample_ts,model="ZZZ",h=12,holdout=FALSE)
 plot(SSES_seas)
 checkresiduals(SSES_seas)
 ```
@@ -269,7 +277,7 @@ autoplot(full_ts) +
   autolayer(SSES_seas$forecast, series="SSES") +
   autolayer(SS_forecast,PI=FALSE,series="BSM") + 
   xlab("Year") + 
-  ylab("Monthly inflow (m^3/s)") +
+  ylab(expression(paste("Monthly inflow (", m^3, "/","s)", sep=""))) +
   guides(colour=guide_legend(title="Forecast"))
 ```
 
@@ -332,12 +340,13 @@ cat("The best model by MAPE is:", row.names(seas_scores[best_model_index,]))
 
 
 ```{r}
-
+library(kableExtra)
 kbl(seas_scores,
     caption = "Forecast Accuracy for Data",
     digits = array(4,ncol(seas_scores))) %>%
   kable_styling(full_width = FALSE, position = "center") %>%
   #highlight model with lowest MAPE
-  kable_styling(latex_options="striped", stripe_index = which.min(seas_scores[,"MAPE"]))
+  #kable_styling(latex_options="striped", stripe_index = which.min(seas_scores[,"MAPE"]))
+  row_spec(best_model_index, bold=T, color="black", background = "yellow")
 ```
 
