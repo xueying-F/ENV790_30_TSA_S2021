@@ -1,12 +1,15 @@
 ---
 title: "ENV 790.30 - Time Series Analysis for Energy Data | Spring 2021"
-subtitle: "Assignment 7 - Due date 04/07/21"
 author: "Student Name"
-output: pdf_document
+subtitle: Assignment 7 - Due date 04/07/21
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 geometry: margin=2.54cm
 header-includes:
-  - \usepackage{enumerate}
-  - \usepackage{enumitem}
+- \usepackage{enumerate}
+- \usepackage{enumitem}
 ---
 
 ## Directions
@@ -108,7 +111,7 @@ legend("topright",
 Fit a non-seasonal ARIMA$(p,d,q)$ model usign the auto.arima() function to the non-seasonal data. Forecast 12 months ahead of time using the $forecast()$ function. Plot your forecasting results and further include on the plot the last year of non-seasonal data to compare with forecasted values (similar to the plot on the lesson file for M10).
 
 ```{r}
-fit_sample_deseason <- auto.arima(sample_deseason, max.D=0, max.P=0,max.Q=0)
+fit_sample_deseason <- auto.arima(sample_deseason)
 #checkresiduals(fit_sample_deseason)
 
 nonseas_ARIMA_forecast <- forecast(fit_sample_deseason, h=12)
@@ -134,6 +137,30 @@ Put the seasonality back on your forecasted values and compare with the original
 
 
 ```{r}
+#Seasonal component from your decompose object 
+sample_seas<-decompose_sample_ts$seasonal
+tail(sample_seas,12)
+
+#Now number
+obs <- nrow(sample)
+
+#check last year data
+sample_seas[(obs-11):obs]
+
+
+forecasted_seasonality <-nonseas_ARIMA_forecast$mean+sample_seas[(obs-11):obs]
+forecasted_seasonality
+
+#plot(forecasted_seasonality)
+
+#Make new plot
+plot(full_ts, type="l", xlab="Year",ylab="Monthly inflow (m^3/s)")
+lines(forecasted_seasonality, col="red")
+legend("topright", 
+  legend=c("original seasonal data(2000-2010)","forecast data with seasonality(2010)"), 
+  col = c("black", "red"),
+  lty=1:1, 
+  cex=0.7)
 
 ```
 
@@ -166,18 +193,18 @@ print(fit_sample_original)
 checkresiduals(fit_sample_original)
 
 #Using auto.arima
-fit_sample_original1 <- auto.arima(sample_ts)
-checkresiduals(fit_sample_original1)
+SARIMA_autofit <- auto.arima(sample_ts)
+checkresiduals(SARIMA_autofit)
 
 ```
 ```{r}
-original_ARIMA_forecast <- forecast(fit_sample_original1, h=12)
-plot(original_ARIMA_forecast)
+SARIMA_forecast <- forecast(SARIMA_autofit, h=12)
+plot(SARIMA_forecast)
 
 # Using R seasadj function on Full data 2000-2010
 #full_deseason <- seasadj(decompose(full_ts))
 
-plot(original_ARIMA_forecast, type="l", xlab="Year",ylab="Monthly inflow (m^3/s)")
+plot(SARIMA_forecast, type="l", xlab="Year",ylab="Monthly inflow (m^3/s)")
 lines(full_ts, col="red")
 legend("topright", 
   legend=c("12-month-ahead forecast with original data (2000-2009)","original data(2000-2010)"), 
@@ -193,7 +220,12 @@ legend("topright",
 Compare the plots from Q4 and Q5 using the autoplot() function.
 
 ```{r}
-
+autoplot(full_ts) +
+  autolayer(forecasted_seasonality, PI=FALSE, series="Forecasted with seasonality") +
+  autolayer(SARIMA_forecast, PI=FALSE, series="SARIMA") +
+  xlab("Year") + 
+  ylab("Monthly inflow (m^3/s)") +
+  guides(colour=guide_legend(title="Forecast"))
 ```
 
 ## Part III: Forecasting with Other Models
@@ -203,7 +235,7 @@ Compare the plots from Q4 and Q5 using the autoplot() function.
 Fit an exponential smooth model to the original time series using the function $es()$  from package `smooth`. Note that this function automatically do the forecast. Do not forget to set the arguments: silent=FALSE and holdout=FALSE, so that the plot is produced and the forecast is for the year of 2010.
 
 ```{r}
-SSES_seas <- es(sample_ts,model="ZZZ",h=n_for,silent="none",holdout=FALSE)
+SSES_seas <- es(sample_ts,model="ZZZ",h=12,silent="none",holdout=FALSE)
 plot(SSES_seas)
 checkresiduals(SSES_seas)
 ```
@@ -214,13 +246,13 @@ Fit a state space model to the original time series using the function $StructTS
 
 ```{r}
 SS_seas <- StructTS(sample_ts,
-                    type="BSM",fixed=c(0,0.001,0.3,NA))   #this function has convergence issues
+                    type="BSM",fixed=c(0.1, 0.001, NA, NA))   #this function has convergence issues
 checkresiduals(SS_seas)
 
 #Generating forecasts
 # StructTS() does not call the forecast() internally so we need one more step
-SS_for <- forecast(SS_seas,h=n_for)
-plot(SS_for)
+SS_forecast <- forecast(SS_seas,h=12)
+plot(SS_forecast)
 ```
 
 ## Part IV: Checking Forecast Accuracy
@@ -231,7 +263,14 @@ Make one plot with the complete original seasonal historical data (Jan 2000 to D
 
 
 ```{r}
-
+autoplot(full_ts) +
+  autolayer(forecasted_seasonality, PI=FALSE, series="Forecasted with seasonality") +
+  autolayer(SARIMA_forecast, PI=FALSE, series="SARIMA") +
+  autolayer(SSES_seas$forecast, series="SSES") +
+  autolayer(SS_forecast,PI=FALSE,series="BSM") + 
+  xlab("Year") + 
+  ylab("Monthly inflow (m^3/s)") +
+  guides(colour=guide_legend(title="Forecast"))
 ```
 
 ### Q10
@@ -240,7 +279,7 @@ From the plot in Q9 which model or model(s) are leading to the better forecasts?
 
 
 ```{r}
-
+# BSM is leading to the better forecasts, because the BSM line is most overlapped with original data line.
 ```
 
 ### Q11
@@ -248,6 +287,57 @@ From the plot in Q9 which model or model(s) are leading to the better forecasts?
 Now compute the following forecast metrics we learned in class: RMSE and MAPE,  for all the models you plotted in part Q9. You can do this by hand since your have forecasted and observed values for the year of 2010. Or you can use R function $accuracy()$ from package "forecast" to do it. Build and a table with the results and highlight the model with the lowest MAPE. Does the lowest MAPE corresponds match your answer for part Q10?
 
 ```{r}
+#sample_ts<-ts(sample$MonthlyInflow, frequency = 12, start = c(2000,1))
+#full_ts<-ts(full$MonthlyInflow, frequency = 12, start = c(2000,1))
 
+nobs <- nrow(full)
+
+last_obs <- full_ts[(nobs-11):nobs] 
+#no need to make obs_2020 a ts object
+
+#If you not sure what we did here comment the following lines and check the values/dates
+tail(full_ts,12)
+last_obs
+```
+
+
+```{r}
+# Model 1:
+ForecastedSeasonality_scores <- accuracy(forecasted_seasonality,last_obs)  #store the performance metrics
+
+# Model 2: 
+SARIMA_forecast_scores <- accuracy(SARIMA_forecast$mean,last_obs)
+
+# Model 3:  SSES
+SSES_scores <- accuracy(SSES_seas$forecast,last_obs)
+
+# Model 4:  BSM 
+SS_scores <- accuracy(SS_forecast$mean,last_obs)
+
+```
+
+
+```{r}
+#create data frame
+seas_scores <- as.data.frame(rbind(ForecastedSeasonality_scores, 
+                                   SARIMA_forecast_scores,
+                                   SSES_scores,
+                                   SS_scores))
+row.names(seas_scores) <- c("Forecasted with seasonality", "SARIMA","SSES","BSM")
+
+#choose model with lowest MAPE.
+best_model_index <- which.min(seas_scores[,"MAPE"])
+cat("The best model by MAPE is:", row.names(seas_scores[best_model_index,]))  
+```
+
+
+```{r}
+
+kbl(seas_scores,
+    caption = "Forecast Accuracy for Data",
+    digits = array(4,ncol(seas_scores))) %>%
+  kable_styling(full_width = FALSE, position = "center") %>%
+  #highlight model with lowest MAPE
+  kable_styling(latex_options="striped", stripe_index = which.min(seas_scores[,"MAPE"]))
 ```
 
